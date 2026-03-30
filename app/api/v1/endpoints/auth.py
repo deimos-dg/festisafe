@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Response
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 import secrets
@@ -62,7 +62,7 @@ def check_user_status(user: User, db: Session = None) -> None:
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @limiter.limit("5/minute")
-def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
+def register(request: Request, response: Response, user_data: UserCreate, db: Session = Depends(get_db)):
     from app.crud.user import create_user
     from app.db.models.user import UserRole
 
@@ -104,7 +104,7 @@ def register(request: Request, user_data: UserCreate, db: Session = Depends(get_
 
 @router.post("/login")
 @limiter.limit("10/minute")
-def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_db)):
+def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     ip = _get_ip(request)
     user = get_user_by_email(db, login_data.email)
 
@@ -185,6 +185,7 @@ def login(request: Request, login_data: LoginRequest, db: Session = Depends(get_
 @limiter.limit("20/minute")
 def refresh(
     request: Request,
+    response: Response,
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
@@ -261,7 +262,7 @@ def _generate_unique_code(db: Session) -> str:
 
 @router.post("/guest-login", status_code=status.HTTP_200_OK)
 @limiter.limit("10/minute")
-def guest_login(request: Request, data: GuestLoginRequest, db: Session = Depends(get_db)):
+def guest_login(request: Request, response: Response, data: GuestLoginRequest, db: Session = Depends(get_db)):
     ip = _get_ip(request)
     guest_code = db.query(GuestCode).filter(GuestCode.code == data.code).first()
 
@@ -329,6 +330,7 @@ def guest_login(request: Request, data: GuestLoginRequest, db: Session = Depends
 @limiter.limit("3/minute")
 def forgot_password(
     request: Request,
+    response: Response,
     data: ForgotPasswordRequest,
     db: Session = Depends(get_db),
 ):
@@ -352,6 +354,7 @@ def forgot_password(
 @limiter.limit("10/minute")
 def reset_password(
     request: Request,
+    response: Response,
     data: ResetPasswordRequest,
     db: Session = Depends(get_db),
 ):
