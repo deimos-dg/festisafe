@@ -1,4 +1,0 @@
-# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\password_reset_token.py
-# hypothesis_version: 6.151.10
-
-['CASCADE', 'User', 'expires_at', 'ix_prt_user_active', 'user_id', 'users.id']

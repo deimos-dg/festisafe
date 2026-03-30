@@ -1,4 +1,0 @@
-# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\device_token.py
-# hypothesis_version: 6.151.10
-
-[512, 'CASCADE', 'User', 'android', 'device_tokens', 'token', 'uq_device_token', 'users.id']

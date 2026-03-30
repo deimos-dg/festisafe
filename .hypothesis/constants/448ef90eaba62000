@@ -1,4 +1,0 @@
-# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\core\security.py
-# hypothesis_version: 6.151.10
-
-['Bearer', 'WWW-Authenticate', 'access', 'email', 'exp', 'iat', 'jti', 'nbf', 'refresh', 'sub', 'type', 'utf-8', 'verify_exp', 'verify_nbf']

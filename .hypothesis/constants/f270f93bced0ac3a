@@ -1,4 +1,0 @@
-# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\user_last_location.py
-# hypothesis_version: 6.151.10
-
-['CASCADE', 'Event', 'User', 'event_id', 'events.id', 'updated_at', 'user_id', 'user_last_locations', 'users.id']
