@@ -45,10 +45,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
 
         # Elimina headers que revelan el stack tecnológico y puertos internos
-        response.headers.pop("server", None)
-        response.headers.pop("x-powered-by", None)
-        response.headers.pop("x-aspnet-version", None)
-        response.headers.pop("x-aspnetmvc-version", None)
+        for header in ("server", "x-powered-by", "x-aspnet-version", "x-aspnetmvc-version"):
+            if header in response.headers:
+                del response.headers[header]
 
         # Trazabilidad: X-Request-ID para correlacionar logs sin exponer internos
         if "X-Request-ID" not in response.headers:
