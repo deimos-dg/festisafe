@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\core\audit_log.py
+# hypothesis_version: 6.151.10
+
+['ACCOUNT_LOCKED', 'ACCOUNT_UNLOCKED', 'BRUTE_FORCE_DETECTED', 'EVENT_CREATED', 'EVENT_DELETED', 'GUEST_LOGIN', 'INVALID_TOKEN', 'LOGIN_BLOCKED', 'LOGIN_FAILED', 'LOGIN_SUCCESS', 'LOGOUT', 'PASSWORD_CHANGED', 'RATE_LIMIT_HIT', 'REGISTER', 'ROLE_CHANGED', 'SOS_ACTIVATED', 'SOS_DEACTIVATED', 'SOS_ESCALATED', 'TOKEN_REFRESH', 'TOKEN_REVOKED', 'UNAUTHORIZED_ACCESS', 'Z', 'detail', 'email', 'event', 'festisafe.security', 'ip', 'timestamp', 'unknown', 'user_id']

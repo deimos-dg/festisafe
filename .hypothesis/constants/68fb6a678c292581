@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\event_participant.py
+# hypothesis_version: 6.151.10
+
+['CASCADE', 'Event', 'GroupMember', 'User', 'all, delete-orphan', 'attendee', 'event_id', 'event_participant', 'event_participants', 'events.id', 'ix_event_user_lookup', 'participants', 'user_id', 'users.id']

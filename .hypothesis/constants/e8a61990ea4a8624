@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\group.py
+# hypothesis_version: 6.151.10
+
+[255, 'CASCADE', 'Event', 'GroupJoinRequest', 'GroupMember', 'GroupMember.group_id', 'User', 'admin_groups', 'admin_id', 'all, delete-orphan', 'event_id', 'events.id', 'group', 'groups', 'ix_group_event_admin', 'users.id']

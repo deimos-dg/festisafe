@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\user.py
+# hypothesis_version: 6.151.10
+
+[100, 255, 'DeviceToken', 'Event', 'Event.organizer_id', 'EventParticipant', 'Group', 'Group.admin_id', 'PasswordResetToken', 'admin', 'all, delete-orphan', 'organizer', 'user', 'users']

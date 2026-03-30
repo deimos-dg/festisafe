@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\guest_code.py
+# hypothesis_version: 6.151.10
+
+['CASCADE', 'Event', 'SET NULL', 'User', 'code', 'events.id', 'expires_at', 'guest_codes', 'is_active', 'ix_guest_code_active', 'users.id']

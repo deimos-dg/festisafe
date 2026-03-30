@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\group_member.py
+# hypothesis_version: 6.151.10
+
+['CASCADE', 'EventParticipant', 'Group', 'event_participant_id', 'group_id', 'group_members', 'groups.id', 'member', 'members']

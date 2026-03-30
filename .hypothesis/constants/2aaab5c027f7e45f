@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\schemas\auth.py
+# hypothesis_version: 6.151.10
+
+[100, '^\\d{6}$', 'before', 'confirm_password', 'name', 'new_password', 'password', 'phone']

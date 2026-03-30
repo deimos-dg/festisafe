@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>FestiSafe</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>festisafe</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>MinimumOSVersion</key>
+	<string>14.0</string>
+
+	<!-- Permisos de ubicación -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FestiSafe necesita tu ubicación para mostrarla a tu grupo en el mapa del festival.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>FestiSafe necesita tu ubicación en segundo plano para mantener tu posición visible en el mapa.</string>
+
+	<!-- Permiso de cámara (escáner QR) -->
+	<key>NSCameraUsageDescription</key>
+	<string>FestiSafe necesita la cámara para escanear códigos QR de eventos.</string>
+
+	<!-- Galería de fotos (avatar personalizado) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FestiSafe necesita acceso a tu galería para que puedas elegir una foto de perfil.</string>
+
+	<!-- Bluetooth BLE — proximidad de grupo y SOS offline -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>FestiSafe usa Bluetooth para detectar miembros cercanos de tu grupo y enviar alertas SOS cuando no hay internet.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>FestiSafe usa Bluetooth para anunciarse a los miembros de tu grupo.</string>
+
+	<!-- Permiso de notificaciones -->
+	<key>NSUserNotificationUsageDescription</key>
+	<string>FestiSafe necesita enviarte notificaciones para alertarte de emergencias SOS de tu grupo.</string>
+
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+
+	<!-- Modos de background: ubicación + fetch + notificaciones push -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+		<string>processing</string>
+	</array>
+
+	<!-- Firebase / FCM -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+
+	<!-- Deep links: festisafe://join/CODIGO -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>festisafe</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.festisafe.festisafe</string>
+		</dict>
+	</array>
+
+</dict>
+</plist>

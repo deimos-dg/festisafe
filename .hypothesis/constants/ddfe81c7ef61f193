@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\event.py
+# hypothesis_version: 6.151.10
+
+[255, 500, 'EventParticipant', 'Group', 'Group.event_id', 'SET NULL', 'User', 'all, delete-orphan', 'event', 'events', 'expires_at', 'is_active', 'organized_events', 'organizer_id', 'starts_at', 'users.id']

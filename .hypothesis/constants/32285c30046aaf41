@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\core\config.py
+# hypothesis_version: 6.151.10
+
+[587, 1048576, '*', '.env', '/api/v1', '2.1.0', 'ALGORITHM', 'FestiSafe', 'HS256', 'HS384', 'HS512', 'INFO', 'SECRET_KEY']

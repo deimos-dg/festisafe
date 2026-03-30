@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\core\validators.py
+# hypothesis_version: 6.151.10
+
+['Admin1234!', 'Contrasena1!', 'Contraseña1!', 'Festisafe1!', 'Festival123!', 'ID', 'P@ssword1', 'Passw0rd!', 'Password123!', 'Qwerty123!', 'Welcome1!', '[A-Z]', '[\\s\\-\\(\\)]', '[a-z]', '\\d', '\\d+', '^\\+?\\d{7,15}$']

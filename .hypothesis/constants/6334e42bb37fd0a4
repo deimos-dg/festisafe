@@ -1,0 +1,4 @@
+# file: C:\Users\dragn\OneDrive\Escritorio\festisafe-master\app\db\models\group_join_request.py
+# hypothesis_version: 6.151.10
+
+[200, 'CASCADE', 'Group', 'User', 'accepted', 'group_id', 'group_join_requests', 'groups.id', 'join_requests', 'pending', 'rejected', 'user_id', 'users.id']

@@ -1,0 +1,40 @@
+﻿# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Kiro specs (documentación local, no va al repo)
+.kiro/
+
+# Flutter build artifacts
+festisafe_app/build/
+festisafe_app/.dart_tool/
+festisafe_app/android/.gradle/
+
+# Firebase — archivos de configuración con claves de API (NO subir al repo)
+festisafe_app/android/app/google-services.json
+festisafe_app/ios/Runner/GoogleService-Info.plist
+
+# Script de migración temporal
+migrate.py
