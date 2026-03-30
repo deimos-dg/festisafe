@@ -383,7 +383,7 @@ _SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?"
 _valid_password_strategy = st.builds(
     lambda base, upper, digit, special: upper + digit + special + base,
     base=st.text(
-        alphabet=st.characters(whitelist_categories=("Ll",), whitelist_characters="abcdefghijklmnopqrstuvwxyz"),
+        alphabet="abcdefghijklmnopqrstuvwxyz",
         min_size=9,
         max_size=20,
     ),
