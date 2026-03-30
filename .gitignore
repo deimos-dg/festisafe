@@ -38,3 +38,4 @@ festisafe_app/ios/Runner/GoogleService-Info.plist
 
 # Script de migración temporal
 migrate.py
+.hypothesis/

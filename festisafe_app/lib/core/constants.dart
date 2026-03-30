@@ -7,11 +7,11 @@ class AppConstants {
   // ---------------------------------------------------------------------------
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://festisafe-alb-814303465.us-east-1.elb.amazonaws.com/api/v1',
+    defaultValue: 'http://festisafe-alb-814303465.us-east-1.elb.amazonaws.com/api/v1',
   );
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'wss://festisafe-alb-814303465.us-east-1.elb.amazonaws.com/ws',
+    defaultValue: 'ws://festisafe-alb-814303465.us-east-1.elb.amazonaws.com/ws',
   );
 
   // ---------------------------------------------------------------------------
