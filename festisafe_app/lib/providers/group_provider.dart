@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 import '../core/constants.dart';
 import '../data/models/group.dart';
 import '../data/services/group_service.dart';

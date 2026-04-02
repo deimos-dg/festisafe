@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 
 class WelcomeScreen extends ConsumerStatefulWidget {
@@ -13,8 +14,8 @@ class WelcomeScreen extends ConsumerStatefulWidget {
 
 class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   final _codeController = TextEditingController();
-  bool _loadingGuest = false;
-  bool _showScanner = false;
+  bool _loading = false;
+  bool _scannerVisible = false;
 
   @override
   void dispose() {
@@ -22,132 +23,191 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     super.dispose();
   }
 
-  Future<void> _guestLogin(String code) async {
-    if (code.length != 6) {
-      _showError('El código debe tener 6 dígitos');
-      return;
-    }
-    setState(() => _loadingGuest = true);
-    final eventId = await ref.read(authProvider.notifier).guestLogin(code);
-    if (!mounted) return;
-    setState(() => _loadingGuest = false);
-    if (eventId != null) {
-      context.go('/home');
-    } else {
-      final state = ref.read(authProvider);
-      if (state is AuthError) _showError(state.message);
+  Future<void> _handleGuestLogin() async {
+    final code = _codeController.text.trim();
+    if (code.length != 6) return;
+
+    setState(() => _loading = true);
+    try {
+      // ✅ Corregido: El método correcto es guestLogin
+      await ref.read(authProvider.notifier).guestLogin(code);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
+  void _onQRDetected(String code) {
+    _codeController.text = code;
+    setState(() => _scannerVisible = false);
+    _handleGuestLogin();
   }
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: _scannerVisible ? _buildScanner() : _buildContent(),
+    );
+  }
+
+  Widget _buildContent() {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: _showScanner
-            ? _buildScanner()
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: IntrinsicHeight(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Logo / título
-                    Image.asset(
-                      'assets/images/rave_logo.png',
-                      width: 180,
-                      height: 180,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'FestiSafe',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Tu compañero de seguridad en festivales',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white60,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
+                    const SizedBox(height: 60),
 
-                    // Botones principales
-                    FilledButton(
-                      onPressed: () => context.push('/login'),
-                      child: const Text('Iniciar sesión'),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(
-                      onPressed: () => context.push('/register'),
-                      child: const Text('Registrarse'),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Divisor
-                    Row(children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'o entra como invitado',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    // HEADER
+                    Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.purple.withOpacity(0.4),
+                                blurRadius: 40,
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(
+                            'assets/images/rave_logo.png',
+                            width: 120,
+                            height: 120,
                           ),
                         ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'FestiSafe',
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Seguridad inteligente en festivales',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white60),
+                        ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // BOTONES
+                    Column(
+                      children: [
+                        FilledButton(
+                          onPressed: () => context.push('/login'),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          child: const Text('Iniciar sesión'),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: () => context.push('/register'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                          child: const Text('Crear cuenta'),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // DIVIDER
+                    Row(
+                      children: const [
+                        Expanded(child: Divider(color: Colors.white24)),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'modo invitado',
+                            style: TextStyle(color: Colors.white38),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.white24)),
+                      ],
+                    ),
+
                     const SizedBox(height: 16),
 
-                    // Campo código invitado
+                    // INPUT
                     TextField(
                       controller: _codeController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       maxLength: 6,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        letterSpacing: 6,
+                        color: Colors.white,
+                      ),
                       decoration: InputDecoration(
-                        hintText: '000000',
+                        hintText: '••••••',
                         counterText: '',
-                        border: const OutlineInputBorder(),
+                        filled: true,
+                        fillColor: Colors.white10,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.qr_code_scanner),
-                          tooltip: 'Escanear QR',
-                          onPressed: () => setState(() => _showScanner = true),
+                          onPressed: () => setState(() => _scannerVisible = true),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
+                    // BOTÓN INVITADO
                     FilledButton.tonal(
-                      onPressed: _loadingGuest
-                          ? null
-                          : () => _guestLogin(_codeController.text.trim()),
-                      child: _loadingGuest
+                      onPressed: _loading ? null : _handleGuestLogin,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      child: _loading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
+                              height: 18,
+                              width: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Entrar como invitado'),
+                          : const Text('Entrar al evento'),
                     ),
+
+                    const Spacer(),
+
+                    Text(
+                      'Powered by FestiSafe',
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.white24),
+                    ),
+
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -158,16 +218,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           onDetect: (capture) {
             final barcode = capture.barcodes.firstOrNull;
             if (barcode?.rawValue == null) return;
-            final value = barcode!.rawValue!;
-            // Extraer código de 6 dígitos del QR
-            final match = RegExp(r'\b(\d{6})\b').firstMatch(value);
-            if (match != null) {
-              setState(() => _showScanner = false);
-              _guestLogin(match.group(1)!);
-            } else {
-              setState(() => _showScanner = false);
-              _showError('QR no reconocido');
-            }
+            _onQRDetected(barcode!.rawValue!);
           },
         ),
         Positioned(
@@ -175,7 +226,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           left: 16,
           child: IconButton.filled(
             icon: const Icon(Icons.close),
-            onPressed: () => setState(() => _showScanner = false),
+            onPressed: () => setState(() => _scannerVisible = false),
           ),
         ),
         const Center(

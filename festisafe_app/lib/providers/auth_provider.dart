@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/user.dart';
 import '../data/services/auth_service.dart';
 import '../data/services/notification_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 
 /// Estados posibles de la sesión.
 sealed class AuthState {

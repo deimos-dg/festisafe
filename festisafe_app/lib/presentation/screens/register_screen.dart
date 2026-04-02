@@ -136,26 +136,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 // Selector de tipo de cuenta
                 Card(
                   margin: EdgeInsets.zero,
-                  child: RadioGroup<bool>(
-                    groupValue: _isOrganizer,
-                    onChanged: (v) => setState(() => _isOrganizer = v!),
-                    child: Column(
-                      children: [
-                        RadioListTile<bool>(
-                          value: false,
-                          title: const Text('Asistente'),
-                          subtitle: const Text('Me uno a eventos y grupos'),
-                          secondary: const Icon(Icons.person_outlined),
-                        ),
-                        const Divider(height: 1),
-                        RadioListTile<bool>(
-                          value: true,
-                          title: const Text('Organizador / Guía'),
-                          subtitle: const Text('Creo y gestiono eventos'),
-                          secondary: const Icon(Icons.manage_accounts_outlined),
-                        ),
-                      ],
-                    ),
+                  child: Column(
+                    children: [
+                      RadioListTile<bool>(
+                        value: false,
+                        groupValue: _isOrganizer,
+                        onChanged: (v) => setState(() => _isOrganizer = v!),
+                        title: const Text('Asistente'),
+                        subtitle: const Text('Me uno a eventos y grupos'),
+                        secondary: const Icon(Icons.person_outlined),
+                      ),
+                      const Divider(height: 1),
+                      RadioListTile<bool>(
+                        value: true,
+                        groupValue: _isOrganizer,
+                        onChanged: (v) => setState(() => _isOrganizer = v!),
+                        title: const Text('Organizador / Guía'),
+                        subtitle: const Text('Creo y gestiono eventos'),
+                        secondary: const Icon(Icons.manage_accounts_outlined),
+                      ),
+                    ],
                   ),
                 ),
 

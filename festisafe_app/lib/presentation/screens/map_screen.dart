@@ -28,7 +28,6 @@ import '../widgets/meeting_point_marker.dart';
 import '../widgets/battery_indicator.dart';
 import '../widgets/reaction_panel.dart';
 import '../../providers/event_provider.dart';
-import '../../providers/background_provider.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -70,12 +69,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final token = await SecureStorage().getAccessToken();
     if (token != null) {
       await ref.read(wsProvider.notifier).connect(widget.eventId, token);
-      await ref.read(backgroundProvider.notifier).start(
+      /*await ref.read(backgroundProvider.notifier).start(
         eventId: widget.eventId,
         accessToken: token,
         wsBaseUrl: AppConstants.wsBaseUrl,
         apiBaseUrl: AppConstants.apiBaseUrl,
-      );
+      );*/
     }
 
     _wsSub = ref.read(wsClientProvider).messageStream.listen(_onWsMessage);
@@ -231,7 +230,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     final sosState = ref.watch(sosProvider);
     final authState = ref.watch(authProvider);
     final eventsAsync = ref.watch(myEventsProvider);
-    final bgState = ref.watch(backgroundProvider);
+    //final bgState = ref.watch(backgroundProvider);
     final isOnline = ref.watch(isOnlineProvider);
 
     final currentUserId = authState is AuthAuthenticated
@@ -254,14 +253,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       appBar: AppBar(
         title: const Text('Mapa del grupo'),
         actions: [
-          if (bgState.isActive)
+          /*if (bgState.isActive)
             Tooltip(
               message: 'Ubicación activa en segundo plano',
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
                 child: const Icon(Icons.location_on, color: Colors.greenAccent, size: 20),
               ),
-            ),
+            ),*/
           const BatteryIndicator(),
           const SizedBox(width: 8),
           Padding(
@@ -292,12 +291,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.festisafe.festisafe',
-                tileProvider: FMTCStore('mapCache').getTileProvider(
-                  settings: FMTCTileProviderSettings(
-                    behavior: CacheBehavior.cacheFirst,
-                    cachedValidDuration: const Duration(days: 14),
-                  ),
-                ),
+                tileProvider: NetworkTileProvider(),
               ),
               MarkerLayer(
                 markers: [

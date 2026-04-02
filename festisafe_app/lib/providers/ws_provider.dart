@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 import '../data/services/ws_client.dart';
 import '../data/models/ws_message.dart';
 

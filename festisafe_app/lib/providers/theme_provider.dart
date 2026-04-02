@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 import '../core/theme/app_theme.dart';
 import '../data/services/theme_service.dart';
 
