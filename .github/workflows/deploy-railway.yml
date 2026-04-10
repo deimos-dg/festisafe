@@ -1,0 +1,28 @@
+name: Deploy Backend → Railway
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'app/**'
+      - 'requirements.txt'
+      - 'Dockerfile'
+      - '.github/workflows/deploy-railway.yml'
+
+jobs:
+  deploy:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy a Railway
+        run: railway up --service festisafe-backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
