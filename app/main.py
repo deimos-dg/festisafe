@@ -121,15 +121,14 @@ app.add_middleware(MaxBodySizeMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 
-# 5. CORS — orígenes explícitos, nunca wildcard en producción
-_cors_origins = settings.BACKEND_CORS_ORIGINS or (["*"] if settings.DEBUG else [])
+# 5. CORS — Permitimos todo para asegurar la comunicación Web <-> API en Railway
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
-    expose_headers=["X-Request-ID"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
     max_age=600,
 )
 
