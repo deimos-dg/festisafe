@@ -59,9 +59,13 @@ app.state.limiter = limiter
 # ---------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
-    from app.core.database import create_tables
-    create_tables()  # Esto crea las tablas en Postgres de Railway
-    logger.info('"FestiSafe API iniciada correctamente"')
+    try:
+        from app.core.database import create_tables
+        create_tables()
+        logger.info('"FestiSafe API iniciada correctamente"')
+    except Exception as e:
+        logger.error(f'"Error durante la creación de tablas: {e}"')
+        # No relanzamos para que la app intente arrancar de todos modos y el health check pase
 
 
 # ---------------------------------------------------------
