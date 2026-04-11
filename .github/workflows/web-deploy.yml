@@ -5,13 +5,11 @@ on:
     branches: [ master ]
     paths:
       - 'festisafe_web/**'
-  pull_request:
-    branches: [ master ]
-    paths:
-      - 'festisafe_web/**'
+  workflow_dispatch: # Permite disparar el despliegue manualmente desde GitHub
 
 jobs:
   build-and-test:
+    name: Build & Test Web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,31 +19,32 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: './festisafe_web/package-lock.json'
+          cache-dependency-path: 'festisafe_web/package-lock.json'
 
       - name: Install dependencies
-        run: |
-          cd festisafe_web
-          npm install
+        working-directory: ./festisafe_web
+        run: npm install
 
       - name: Build Next.js app
-        run: |
-          cd festisafe_web
-          npm run build
+        working-directory: ./festisafe_web
+        run: npm run build
         env:
           NEXT_PUBLIC_API_URL: https://festisafe-production.up.railway.app
 
   deploy:
-    # Este paso SOLO se ejecutará si los cambios se fusionan (Merge) en Master
+    name: Cloud Deploy to Railway
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
       - name: Deploy to Railway (Portal Admin)
-        run: |
-          npm i -g @railway/cli
-          railway up --service festisafe-web
+        working-directory: ./festisafe_web
+        # Usamos el token unificado RAILWAY_TOKEN que ya actualizaste
+        run: railway up --service festisafe-web --detach
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_WEB }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
