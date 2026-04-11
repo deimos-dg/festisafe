@@ -20,6 +20,7 @@ class AuthService {
     required String password,
     String? phone,
     bool isOrganizer = false,
+    String? folio,
   }) async {
     await _client.dio.post('/auth/register', data: {
       'name': name,
@@ -28,6 +29,7 @@ class AuthService {
       'confirm_password': password,
       if (phone != null) 'phone': phone,
       'is_organizer': isOrganizer,
+      if (folio != null) 'folio': folio,
     });
   }
 

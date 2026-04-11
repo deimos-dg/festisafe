@@ -142,6 +142,95 @@ def get_event_locations(
     return results
 
 
+@router.get("/company/{company_id}", response_model=list[LocationOut])
+def get_company_locations(
+    company_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Devuelve las últimas ubicaciones de todos los empleados vinculados a una empresa.
+    Solo accesible por Admin global o Administrador de esa empresa.
+    """
+    from app.api.v1.endpoints.companies import check_is_company_admin
+    cid = _parse_uuid(company_id, "Empresa")
+    check_is_company_admin(current_user, cid)
+
+    # Buscar usuarios que pertenecen a esta empresa
+    rows = (
+        db.query(UserLastLocation, User)
+        .join(User, UserLastLocation.user_id == User.id)
+        .filter(
+            User.company_id == cid,
+            UserLastLocation.is_visible == True,
+        )
+        .all()
+    )
+
+    results = []
+    for loc, user in rows:
+        out = LocationOut.model_validate(loc)
+        out.name = user.name or "Empleado"
+        # Añadir el rol del empleado para el filtrado en la web
+        out.role = user.role # Podríamos extender el esquema si es necesario
+        results.append(out)
+    return results
+
+from app.db.models.user_location_history import UserLocationHistory
+from datetime import timedelta
+
+@router.get("/history/{user_id}", response_model=list[LocationOut])
+def get_user_location_history(
+    user_id: str,
+    start_time: datetime = None,
+    end_time: datetime = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Obtiene el histórico de ubicaciones de un usuario.
+    Solo administradores de la misma empresa pueden ver esto.
+    """
+    uid = _parse_uuid(user_id, "Usuario")
+    target_user = db.query(User).filter(User.id == uid).first()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Seguridad: Validar que el admin pertenece a la misma empresa
+    from app.api.v1.endpoints.companies import check_is_company_admin
+    if target_user.company_id:
+        check_is_company_admin(current_user, target_user.company_id)
+    else:
+        # Si no tiene empresa, solo admin global puede ver
+        if current_user.role != "admin":
+            raise HTTPException(status_code=403, detail="No tienes permisos para ver este histórico")
+
+    # Rango por defecto: últimas 24 horas
+    if not start_time:
+        start_time = datetime.utcnow() - timedelta(hours=24)
+    if not end_time:
+        end_time = datetime.utcnow()
+
+    history = (
+        db.query(UserLocationHistory)
+        .filter(
+            UserLocationHistory.user_id == uid,
+            UserLocationHistory.created_at >= start_time,
+            UserLocationHistory.created_at <= end_time,
+        )
+        .order_by(UserLocationHistory.created_at.asc())
+        .limit(500)
+        .all()
+    )
+
+    results = []
+    for point in history:
+        out = LocationOut.model_validate(point)
+        out.name = target_user.name
+        results.append(out)
+    return results
+
 @router.patch("/visibility/{event_id}", response_model=LocationOut)
 def toggle_visibility(
     event_id: str,

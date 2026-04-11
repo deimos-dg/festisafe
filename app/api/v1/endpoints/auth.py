@@ -178,6 +178,12 @@ def login(request: Request, response: Response, login_data: LoginRequest, db: Se
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "role": user.role,
+            "company_id": str(user.company_id) if user.company_id else None
+        }
     }
 
 

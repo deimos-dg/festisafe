@@ -16,9 +16,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _folioCtrl = TextEditingController(); // Nuevo controlador para el folio
   bool _obscure = true;
   bool _submitting = false;
-  bool _isOrganizer = false;
+  
+  // 0: Asistente, 1: Organizador, 2: Personal (con folio)
+  int _accountType = 0; 
 
   @override
   void dispose() {
@@ -26,6 +29,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _phoneCtrl.dispose();
+    _folioCtrl.dispose();
     super.dispose();
   }
 
@@ -38,7 +42,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailCtrl.text.trim(),
             password: _passCtrl.text,
             phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-            isOrganizer: _isOrganizer,
+            isOrganizer: _accountType == 1,
+            folio: _accountType == 2 ? _folioCtrl.text.trim() : null, // Enviamos el folio si aplica
           );
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -133,31 +138,63 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Selector de tipo de cuenta
+                // Selector de tipo de cuenta mejorado
                 Card(
                   margin: EdgeInsets.zero,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
                   child: Column(
                     children: [
-                      RadioListTile<bool>(
-                        value: false,
-                        groupValue: _isOrganizer,
-                        onChanged: (v) => setState(() => _isOrganizer = v!),
+                      RadioListTile<int>(
+                        value: 0,
+                        groupValue: _accountType,
+                        onChanged: (v) => setState(() => _accountType = v!),
                         title: const Text('Asistente'),
                         subtitle: const Text('Me uno a eventos y grupos'),
                         secondary: const Icon(Icons.person_outlined),
                       ),
                       const Divider(height: 1),
-                      RadioListTile<bool>(
-                        value: true,
-                        groupValue: _isOrganizer,
-                        onChanged: (v) => setState(() => _isOrganizer = v!),
+                      RadioListTile<int>(
+                        value: 1,
+                        groupValue: _accountType,
+                        onChanged: (v) => setState(() => _accountType = v!),
                         title: const Text('Organizador / Guía'),
                         subtitle: const Text('Creo y gestiono eventos'),
                         secondary: const Icon(Icons.manage_accounts_outlined),
                       ),
+                      const Divider(height: 1),
+                      RadioListTile<int>(
+                        value: 2,
+                        groupValue: _accountType,
+                        onChanged: (v) => setState(() => _accountType = v!),
+                        title: const Text('Personal / Staff'),
+                        subtitle: const Text('Tengo un folio de empresa'),
+                        secondary: const Icon(Icons.badge_outlined),
+                      ),
                     ],
                   ),
                 ),
+
+                if (_accountType == 2) ...[
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _folioCtrl,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'Folio de Empresa',
+                      hintText: 'FS-XXXX-XXXX',
+                      prefixIcon: Icon(Icons.vpn_key_outlined),
+                      border: OutlineInputBorder(),
+                      helperText: 'Ingresa el código que te proporcionó tu jefe',
+                    ),
+                    validator: (v) => (_accountType == 2 && (v == null || v.isEmpty))
+                        ? 'El folio es obligatorio'
+                        : null,
+                  ),
+                ],
 
                 const SizedBox(height: 24),
                 FilledButton(

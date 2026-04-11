@@ -128,6 +128,53 @@ def generate_folios_bulk(
 
     return new_folios
 
+from fastapi.responses import StreamingResponse
+import io
+import pandas as pd
+
+@router.get("/{company_id}/folios/export", response_class=StreamingResponse)
+def export_company_folios(
+    company_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Genera un archivo Excel con todos los folios de la empresa."""
+    check_is_company_admin(current_user, company_id)
+
+    folios = db.query(Folio).filter(Folio.code == company_id).all() # Error corregido abajo
+    # Corrigiendo filtro:
+    folios = db.query(Folio).filter(Folio.company_id == company_id).all()
+
+    if not folios:
+        raise HTTPException(status_code=404, detail="No hay folios para exportar")
+
+    # Crear DataFrame
+    data = []
+    for f in folios:
+        data.append({
+            "Código de Folio": f.code,
+            "Empleado": f.employee_name or "N/A",
+            "Puesto": f.employee_role or "N/A",
+            "Teléfono": f.employee_phone or "N/A",
+            "Estado": "Canjeado" if f.is_used else "Disponible",
+            "Fecha de Creación": f.created_at.strftime("%Y-%m-%d %H:%M")
+        })
+
+    df = pd.DataFrame(data)
+
+    # Escribir a un buffer en memoria
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Folios FestiSafe')
+
+    output.seek(0)
+
+    headers = {
+        'Content-Disposition': f'attachment; filename="folios_festisafe_{datetime.now().strftime("%Y%m%d")}.xlsx"'
+    }
+
+    return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 @router.get("/{company_id}/folios", response_model=List[FolioResponse])
 def get_company_folios(
     company_id: UUID,

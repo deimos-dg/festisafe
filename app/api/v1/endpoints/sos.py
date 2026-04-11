@@ -165,6 +165,13 @@ async def activate_sos(
     else:
         asyncio.create_task(manager.broadcast_to_organizers(event_id, alert))
 
+    # --- NUEVO: Notificar al Portal Web de la Empresa ---
+    if current_user.company_id:
+        company_topic = f"company_{current_user.company_id}"
+        asyncio.create_task(
+            manager.broadcast_to_topic(company_topic, alert)
+        )
+
     return participant
 
 

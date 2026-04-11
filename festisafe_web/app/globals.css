@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-festisafe-primary: #6366f1;     /* Indigo vibrante */
+  --color-festisafe-secondary: #0f172a;   /* Slate profundo */
+  --color-festisafe-accent: #818cf8;      /* Indigo claro */
+  --color-festisafe-dark: #030712;        /* Negro casi total */
+}
+
+@layer base {
+  body {
+    @apply bg-[#030712] text-slate-200 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-2xl transition-all duration-300;
+  }
+
+  .glass-sidebar {
+    @apply bg-slate-900/40 backdrop-blur-3xl border-r border-white/5;
+  }
+
+  .neon-border {
+    @apply border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.1)];
+  }
+
+  .premium-input {
+    @apply bg-white/[0.05] border border-white/10 rounded-2xl px-6 py-4 text-sm text-white placeholder:text-slate-600 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all;
+  }
+
+  .premium-button {
+    @apply py-4 px-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20 transition-all active:scale-95;
+  }
+}
+
+/* Animaciones de radar y fondo */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+
+.animate-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-slate-700 rounded-full;
+}

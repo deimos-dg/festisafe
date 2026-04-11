@@ -21,19 +21,44 @@ def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
 
 class ConnectionManager:
     """
-    Conexiones agrupadas: event_id → channel_id → {user_id: WebSocket}
-    Los miembros normales usan su group_id como channel.
-    Los organizadores/admins usan _ORGANIZER_CHANNEL.
+    Conexiones agrupadas:
+    - Por Evento: event_id → channel_id → {user_id: WebSocket}
+    - Por Tópico (Web): topic → {user_id: WebSocket}
     """
 
     def __init__(self):
         self._connections: Dict[str, Dict[str, Dict[str, WebSocket]]] = {}
+        self._topic_connections: Dict[str, Dict[str, WebSocket]] = {} # Nuevo: para la Web
         self._last_update: Dict[str, datetime] = {}
         self._last_position: Dict[str, tuple[float, float]] = {}
 
     # ------------------------------------------------------------------
     # Conexión / desconexión
     # ------------------------------------------------------------------
+
+    def connect_topic(self, topic: str, user_id: str, ws: WebSocket):
+        """Suscribe una conexión a un tópico (ej: company_uuid)"""
+        self._topic_connections.setdefault(topic, {})[user_id] = ws
+
+    def disconnect_topic(self, topic: str, user_id: str):
+        try:
+            del self._topic_connections[topic][user_id]
+            if not self._topic_connections[topic]:
+                del self._topic_connections[topic]
+        except KeyError:
+            pass
+
+    async def broadcast_to_topic(self, topic: str, message: dict):
+        """Envía un mensaje a todos los suscritos a un tópico (Portal Web)"""
+        conns = self._topic_connections.get(topic, {})
+        dead = []
+        for uid, ws in conns.items():
+            try:
+                await ws.send_json(message)
+            except Exception:
+                dead.append(uid)
+        for uid in dead:
+            self.disconnect_topic(topic, uid)
 
     def connect(self, event_id: str, channel: str, user_id: str, ws: WebSocket):
         self._connections.setdefault(event_id, {}).setdefault(channel, {})[user_id] = ws

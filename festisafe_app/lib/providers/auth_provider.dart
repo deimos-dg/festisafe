@@ -88,6 +88,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
     String? phone,
     bool isOrganizer = false,
+    String? folio,
   }) async {
     state = const AuthLoading();
     try {
@@ -97,6 +98,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
         phone: phone,
         isOrganizer: isOrganizer,
+        folio: folio,
       );
       state = const AuthUnauthenticated();
     } on DioException catch (e) {
