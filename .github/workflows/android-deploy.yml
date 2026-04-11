@@ -1,0 +1,53 @@
+name: Deploy Android to Google Play
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'festisafe_app/**'
+
+jobs:
+  deploy:
+    name: Build & Upload to Play Store
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        working-directory: ./festisafe_app
+        run: flutter pub get
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > festisafe_app/android/app/upload-keystore.jks
+
+      - name: Build App Bundle
+        working-directory: ./festisafe_app
+        run: |
+          flutter build appbundle --release \
+            --build-name=1.0.0 \
+            --build-number=${{ github.run_number }}
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+
+      - name: Upload to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonRaw: ${{ secrets.GOOGLE_PLAY_JSON }}
+          packageName: com.festisafe.app
+          releaseFiles: festisafe_app/build/app/outputs/bundle/release/app-release.aab
+          track: internal # Puedes cambiar a 'production' después de las pruebas
+          status: completed

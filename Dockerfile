@@ -18,8 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código
 COPY . .
 
-# Puerto expuesto
-EXPOSE 8000
+# Puerto expuesto dinámico para Railway
+EXPOSE ${PORT:-8000}
 
-# Arranque con uvicorn — workers ajustables por variable de entorno
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${UVICORN_WORKERS:-2}"]
+# Arranque con uvicorn — usando el puerto de la variable de entorno PORT
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers ${UVICORN_WORKERS:-2}
