@@ -1,13 +1,32 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api';
 
 export default function OwnerAdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await adminApi.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Error loading stats:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadStats();
+  }, []);
+
   const adminStats = [
-    { label: 'Ingresos Mensuales', val: '$45,280', delta: '+12%', color: 'text-emerald-400' },
-    { label: 'Empresas Activas', val: '24', delta: '+2', color: 'text-indigo-400' },
-    { label: 'Alertas Sistema', val: '0', delta: 'Nominal', color: 'text-slate-400' },
-    { label: 'Uso de Red Cloud', val: '62%', delta: 'Estable', color: 'text-purple-400' },
+    { label: 'Usuarios Totales', val: stats?.total_users || '0', delta: 'Global', color: 'text-emerald-400' },
+    { label: 'Empresas Activas', val: stats?.total_companies || '0', delta: 'B2B', color: 'text-indigo-400' },
+    { label: 'Eventos Activos', val: stats?.active_events || '0', delta: 'Live', color: 'text-orange-400' },
+    { label: 'Alertas SOS', val: stats?.active_sos || '0', delta: 'Crítico', color: 'text-red-400' },
   ];
 
   const quickActions = [

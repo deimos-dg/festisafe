@@ -143,8 +143,10 @@ def get_stats(
     current_user: User = Depends(require_roles(["admin"])),
 ):
     """Estadísticas generales del sistema."""
+    from app.db.models.company import Company
     return {
         "total_users": db.query(User).count(),
+        "total_companies": db.query(Company).count(),
         "active_users": db.query(User).filter(User.is_active == True).count(),
         "locked_users": db.query(User).filter(User.is_locked == True).count(),
         "total_events": db.query(Event).count(),
