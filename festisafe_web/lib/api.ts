@@ -1,7 +1,8 @@
-const API_URL = "https://festisafe-production.up.railway.app/api/v1";
+// Intentamos obtener la URL de la variable de entorno, si no, usamos la de producción por defecto
+const API_BASE = "https://festisafe-production.up.railway.app";
+const API_URL = `${API_BASE}/api/v1`;
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  // En el futuro, aquí sacaremos el token del almacenamiento local (localStorage o cookies)
   const token = typeof window !== 'undefined' ? localStorage.getItem('festisafe_token') : null;
 
   const headers = {

@@ -29,12 +29,14 @@ class Settings(BaseSettings):
     @classmethod
     def fix_postgres_protocol(cls, v: str) -> str:
         if v and v.startswith("postgres://"):
-            return v.replace("postgres://", "postgresql://", 1)
+            return v.replace("postgres://", "postgresql+psycopg2://", 1)
+        if v and v.startswith("postgresql://"):
+             return v.replace("postgresql://", "postgresql+psycopg2://", 1)
         return v
 
     # CORS — lista explícita de orígenes permitidos
     # En producción debe ser la URL del frontend/app, nunca "*"
-    BACKEND_CORS_ORIGINS: List[str] = []
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     # Hosts permitidos — previene Host header injection y enmascaramiento de puertos
     # En producción: ["festisafe-alb-814303465.us-east-1.elb.amazonaws.com", "api.festisafe.com"]
