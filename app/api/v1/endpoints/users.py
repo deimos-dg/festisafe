@@ -169,6 +169,32 @@ def delete_fcm_token(
     return {"message": "Token eliminado correctamente"}
 
 
+from app.db.models.user_last_location import UserLastLocation
+from app.schemas.location import LocationOut
+
+@router.get("/active", response_model=list[LocationOut])
+def get_active_users_locations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_roles(["admin", "organizer"])),
+):
+    """
+    Devuelve las últimas ubicaciones de todos los usuarios visibles.
+    Solo accesible para admins y organizadores.
+    """
+    rows = (
+        db.query(UserLastLocation, User)
+        .join(User, UserLastLocation.user_id == User.id)
+        .filter(UserLastLocation.is_visible == True)
+        .all()
+    )
+
+    results = []
+    for loc, user in rows:
+        out = LocationOut.model_validate(loc)
+        out.name = user.name or "Usuario"
+        results.append(out)
+    return results
+
 @router.delete("/me", status_code=status.HTTP_200_OK)
 def delete_my_account(
     db: Session = Depends(get_db),

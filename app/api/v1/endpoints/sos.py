@@ -283,6 +283,46 @@ async def escalate_sos(
     return participant
 
 
+@router.get("/recent", response_model=List[dict])
+def list_recent_sos(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Lista los SOS activos en todo el sistema para el dashboard de administración.
+    Solo para administradores globales o de empresa.
+    """
+    query = db.query(EventParticipant, User).join(User, EventParticipant.user_id == User.id).filter(
+        EventParticipant.sos_active == True
+    )
+
+    # Si es admin de empresa, solo ve los de su empresa
+    if current_user.role != "admin" and current_user.company_id:
+        query = query.filter(User.company_id == current_user.company_id)
+    elif current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver todas las alertas")
+
+    rows = query.all()
+    results = []
+    for p, u in rows:
+        # Buscar la última ubicación
+        loc = db.query(UserLastLocation).filter(
+            UserLastLocation.user_id == u.id,
+            UserLastLocation.event_id == p.event_id
+        ).first()
+
+        results.append({
+            "id": str(p.id),
+            "user_id": str(u.id),
+            "name": u.name or "Usuario",
+            "event_id": str(p.event_id),
+            "latitude": loc.latitude if loc else None,
+            "longitude": loc.longitude if loc else None,
+            "started_at": p.sos_started_at.isoformat() if p.sos_started_at else None,
+            "status": "warning" if p.sos_active else "stable"
+        })
+    return results
+
 @router.get("/{event_id}/active", response_model=List[SOSStatusResponse])
 def list_active_sos(
     event_id: str,
