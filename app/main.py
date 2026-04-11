@@ -131,10 +131,10 @@ app.add_middleware(MaxBodySizeMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 
-# 5. CORS — Permitimos todo para asegurar la comunicación Web <-> API en Railway
+# 5. CORS — orígenes desde configuración (settings.BACKEND_CORS_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

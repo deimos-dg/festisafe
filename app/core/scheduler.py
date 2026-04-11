@@ -85,6 +85,151 @@ def cleanup_expired_reset_tokens():
         db.close()
 
 
+def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    R = 6_371_000
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def _point_in_polygon(lat: float, lon: float, polygon: list) -> bool:
+    """Ray-casting: True si el punto está dentro del polígono."""
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i][0], polygon[i][1]
+        xj, yj = polygon[j][0], polygon[j][1]
+        if ((yi > lon) != (yj > lon)) and (lat < (xj - xi) * (lon - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def _is_inside_geofence(geofence: Geofence, lat: float, lon: float) -> bool:
+    if geofence.radius_meters and geofence.latitude and geofence.longitude:
+        return _haversine_meters(lat, lon, geofence.latitude, geofence.longitude) <= geofence.radius_meters
+    if geofence.polygon_points and len(geofence.polygon_points) >= 3:
+        return _point_in_polygon(lat, lon, geofence.polygon_points)
+    return False
+
+
+def check_geofences():
+    """
+    Evalúa cada 2 minutos si algún empleado entró o salió de una geofence activa.
+    Solo procesa ubicaciones actualizadas en los últimos 5 minutos.
+    """
+    db: Session = SessionLocal()
+    try:
+        import asyncio
+        from app.core.ws_manager import manager
+
+        now = datetime.utcnow()
+        stale_cutoff = now - timedelta(minutes=5)
+
+        geofences = db.query(Geofence).filter(Geofence.is_active == True).all()
+        if not geofences:
+            return
+
+        company_geofences: dict = {}
+        for gf in geofences:
+            company_geofences.setdefault(str(gf.company_id), []).append(gf)
+
+        for company_id_str, gf_list in company_geofences.items():
+            rows = (
+                db.query(UserLastLocation, User)
+                .join(User, UserLastLocation.user_id == User.id)
+                .filter(
+                    User.company_id == gf_list[0].company_id,
+                    UserLastLocation.updated_at >= stale_cutoff,
+                    UserLastLocation.is_visible == True,
+                )
+                .all()
+            )
+
+            for loc, user in rows:
+                for gf in gf_list:
+                    currently_inside = _is_inside_geofence(gf, loc.latitude, loc.longitude)
+
+                    last_event = (
+                        db.query(GeofenceEvent)
+                        .filter(
+                            GeofenceEvent.geofence_id == gf.id,
+                            GeofenceEvent.user_id == user.id,
+                        )
+                        .order_by(GeofenceEvent.created_at.desc())
+                        .first()
+                    )
+
+                    was_inside = last_event.is_inside if last_event else False
+                    if currently_inside == was_inside:
+                        continue
+
+                    event_type = "entered" if currently_inside else "exited"
+                    db.add(GeofenceEvent(
+                        geofence_id=gf.id,
+                        user_id=user.id,
+                        event_type=event_type,
+                        is_inside=currently_inside,
+                    ))
+
+                    alert = {
+                        "type": "geofence_alert",
+                        "event_type": event_type,
+                        "geofence_id": str(gf.id),
+                        "geofence_name": gf.name,
+                        "geofence_type": gf.type,
+                        "user_id": str(user.id),
+                        "user_name": user.name,
+                        "latitude": loc.latitude,
+                        "longitude": loc.longitude,
+                        "timestamp": now.isoformat(),
+                    }
+                    topic = f"company_{company_id_str}"
+                    try:
+                        loop = asyncio.get_event_loop()
+                        if loop.is_running():
+                            asyncio.ensure_future(manager.broadcast_to_topic(topic, alert))
+                        else:
+                            loop.run_until_complete(manager.broadcast_to_topic(topic, alert))
+                    except RuntimeError:
+                        asyncio.run(manager.broadcast_to_topic(topic, alert))
+
+                    logger.info(f"Geofence: {user.name} {event_type} '{gf.name}'")
+
+        db.commit()
+
+    except Exception as e:
+        logger.error(f"Scheduler check_geofences error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def deactivate_expired_events():
+    """Desactiva eventos cuyo expires_at ya pasó."""
+    db: Session = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        expired = db.query(Event).filter(
+            Event.is_active == True,
+            Event.expires_at <= now,
+        ).all()
+        count = len(expired)
+        for event in expired:
+            event.is_active = False
+        if count:
+            db.commit()
+            logger.info(f"Scheduler: desactivados {count} eventos expirados")
+    except Exception as e:
+        logger.error(f"Scheduler deactivate_expired_events error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
 def start_scheduler():
     scheduler.add_job(check_geofences, "interval", minutes=2, id="check_geofences")
     scheduler.add_job(deactivate_expired_events, "interval", minutes=5, id="deactivate_events")
