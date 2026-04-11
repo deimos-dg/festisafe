@@ -1,5 +1,5 @@
-// Intentamos obtener la URL de la variable de entorno, si no, usamos la de producción por defecto
-const API_BASE = "https://festisafe-production.up.railway.app";
+// Usamos la variable de entorno de Railway, o la de producción por defecto
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://festisafe-production.up.railway.app";
 const API_URL = `${API_BASE}/api/v1`;
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {

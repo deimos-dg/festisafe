@@ -44,7 +44,7 @@ jobs:
 
       - name: Deploy to Railway (Portal Admin)
         working-directory: ./festisafe_web
-        # Usamos el token unificado RAILWAY_TOKEN que ya actualizaste
+        # Si el error persiste, cambia 'festisafe-web' por el nombre real en Railway
         run: railway up --service festisafe-web --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
