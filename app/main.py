@@ -24,7 +24,7 @@ from app.core.audit_log import log_security_event, AuditEvent
 from app.api.v1.endpoints import (
     auth, health, users, gps, groups,
     group_members, events, ws, sos, admin,
-    companies,
+    companies, dashboard, billing,
 )
 
 # ---------------------------------------------------------
@@ -156,6 +156,8 @@ app.include_router(group_members.router, prefix=settings.API_V1_STR)
 app.include_router(sos.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
 app.include_router(companies.router, prefix=settings.API_V1_STR)
+app.include_router(dashboard.router, prefix=settings.API_V1_STR)
+app.include_router(billing.router, prefix=settings.API_V1_STR)
 
 
 # ---------------------------------------------------------

@@ -20,6 +20,7 @@ import '../../presentation/screens/event_groups_screen.dart';
 import '../../presentation/screens/admin_screen.dart';
 import '../../presentation/screens/forgot_password_screen.dart';
 import '../../presentation/screens/password_reset_screen.dart';
+import '../../presentation/screens/chat_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthRouterNotifier(ref);
@@ -62,6 +63,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/map/:eventId',
         builder: (_, state) => MapScreen(eventId: state.pathParameters['eventId']!),
+        routes: [
+          GoRoute(
+            path: 'chat',
+            builder: (_, state) => ChatScreen(eventId: state.pathParameters['eventId']!),
+          ),
+        ],
       ),
       GoRoute(
         path: '/compass/:userId',

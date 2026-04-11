@@ -1,12 +1,17 @@
 import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timedelta
+import math
 from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.db.models.event import Event
 from app.db.models.group import Group
 from app.db.models.revoked_token import RevokedToken
+from app.db.models.geofence import Geofence, GeofenceType
+from app.db.models.geofence_event import GeofenceEvent
+from app.db.models.user_last_location import UserLastLocation
+from app.db.models.user import User
 from app.crud import password_reset_token as crud_password_reset_token
 
 logger = logging.getLogger(__name__)
@@ -81,6 +86,8 @@ def cleanup_expired_reset_tokens():
 
 
 def start_scheduler():
+    scheduler.add_job(check_geofences, "interval", minutes=2, id="check_geofences")
+    scheduler.add_job(deactivate_expired_events, "interval", minutes=5, id="deactivate_events")
     scheduler.add_job(cleanup_expired_groups, "interval", minutes=30, id="cleanup_groups")
     scheduler.add_job(cleanup_revoked_tokens, "interval", hours=1, id="cleanup_tokens")
     scheduler.add_job(cleanup_expired_reset_tokens, "interval", hours=24, id="cleanup_reset_tokens")

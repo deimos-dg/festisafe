@@ -21,8 +21,7 @@ class SosAlert {
   factory SosAlert.fromJson(Map<String, dynamic> json) {
     return SosAlert(
       userId: json['user_id'] as String,
-      userName: json['user_name'] as String? ?? json['name'] as String? ?? 'Desconocido',
-      // latitude/longitude pueden ser null si el SOS se activó sin GPS
+      userName: json['name'] as String? ?? 'Desconocido',
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       batteryLevel: json['battery_level'] as int? ?? 0,

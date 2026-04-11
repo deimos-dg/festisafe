@@ -31,6 +31,7 @@ class _OrganizerDashboardScreenState
   void initState() {
     super.initState();
     _loadParticipants();
+    _loadActiveSos();
     _refreshTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _loadParticipants(),
@@ -68,6 +69,13 @@ class _OrganizerDashboardScreenState
     } finally {
       if (mounted) setState(() => _loadingParticipants = false);
     }
+  }
+
+  Future<void> _loadActiveSos() async {
+    try {
+      final alerts = await SosService().getActiveSos(widget.eventId);
+      if (mounted) ref.read(sosProvider.notifier).setActiveAlerts(alerts);
+    } catch (_) {}
   }
 
   Future<void> _toggleEvent(bool isActive) async {
