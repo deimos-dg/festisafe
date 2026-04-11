@@ -9,6 +9,7 @@ from app.db.session import get_db
 from app.db.models.user import User, UserRole
 from app.db.models.event import Event
 from app.db.models.event_participant import EventParticipant
+from app.db.models.company import Company
 from app.schemas.user import UserResponse
 from app.core.limiter import limiter
 
@@ -143,7 +144,6 @@ def get_stats(
     current_user: User = Depends(require_roles(["admin"])),
 ):
     """Estadísticas generales del sistema."""
-    from app.db.models.company import Company
     return {
         "total_users": db.query(User).count(),
         "total_companies": db.query(Company).count(),
