@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api';
 
 export default function PortalMapPage() {
   const [employees, setEmployees] = useState<any[]>([]);
@@ -8,14 +9,34 @@ export default function PortalMapPage() {
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastContent, setBroadcastContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carga de datos reales desde la API de Railway
+  const loadData = async () => {
+    try {
+      const data = await adminApi.getEmployees();
+      // Si el backend aún no tiene el endpoint /users/active, usamos fallback seguro
+      setEmployees(Array.isArray(data) ? data : []);
+
+      // Consultamos alertas SOS activas
+      const alerts = await adminApi.getRecentAlerts();
+      if (alerts && alerts.length > 0) {
+        setActiveSOS(alerts[0]); // Mostramos la alerta más reciente
+      } else {
+        setActiveSOS(null);
+      }
+    } catch (error) {
+      console.error("Error cargando personal táctico:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Datos simulados con estados reales
-    setEmployees([
-      { id: '1', name: 'Oficial Juan', role: 'Seguridad', lat: 19.4326, lng: -99.1332, battery: 12, status: 'warning', lastSeen: '2m ago' },
-      { id: '2', name: 'Dra. Elena', role: 'Medico', lat: 19.4335, lng: -99.1340, battery: 42, status: 'ok', lastSeen: 'Online' },
-      { id: '3', name: 'Staff Carlos', role: 'Logistica', lat: 19.4318, lng: -99.1325, battery: 88, status: 'ok', lastSeen: 'Online' },
-    ]);
+    loadData();
+    // Actualización automática cada 10 segundos (Polling táctico)
+    const interval = setInterval(loadData, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (

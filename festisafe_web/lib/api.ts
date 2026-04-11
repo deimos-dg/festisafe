@@ -37,12 +37,16 @@ export const authApi = {
   }
 };
 
-// Funciones para el Super Admin
+// Funciones para el Super Admin y Dashboard
 export const adminApi = {
   getCompanies: () => fetchWithAuth("/companies/"),
   createCompany: (data: any) => fetchWithAuth("/companies/", {
     method: "POST",
     body: JSON.stringify(data),
   }),
-  getStats: () => fetchWithAuth("/admin/stats"), // Asumiendo que existe un endpoint de métricas
+  getStats: () => fetchWithAuth("/admin/stats"),
+  // Obtener empleados activos en tiempo real (Pings de GPS)
+  getEmployees: () => fetchWithAuth("/users/active"),
+  // Obtener alertas SOS recientes
+  getRecentAlerts: () => fetchWithAuth("/alerts/recent"),
 };
