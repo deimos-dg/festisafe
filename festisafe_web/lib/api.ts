@@ -51,5 +51,5 @@ export const adminApi = {
   // Obtener empleados activos en tiempo real (Pings de GPS)
   getEmployees: () => fetchWithAuth("/users/active"),
   // Obtener alertas SOS recientes
-  getRecentAlerts: () => fetchWithAuth("/alerts/recent"),
+  getRecentAlerts: () => fetchWithAuth("/sos/recent"),
 };
