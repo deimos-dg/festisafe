@@ -27,12 +27,15 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
 // Funciones de Autenticación
 export const authApi = {
   login: async (email: string, pass: string) => {
-    const response = await fetch("https://festisafe-production.up.railway.app/api/v1/auth/login", {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password: pass }),
     });
-    if (!response.ok) throw new Error("Credenciales inválidas");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || "Credenciales inválidas");
+    }
     return response.json();
   }
 };
