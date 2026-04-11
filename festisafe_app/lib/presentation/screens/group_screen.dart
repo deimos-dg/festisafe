@@ -3,13 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ws_provider.dart';
-import '../../providers/chat_provider.dart';
 import '../../data/models/group_member.dart';
-import '../../data/models/chat_message.dart';
 import '../../data/services/group_service.dart';
 import '../../data/services/api_client.dart';
 import '../../core/constants.dart';
-import '../widgets/reaction_panel.dart';
+import 'chat_screen.dart';
 
 class GroupScreen extends ConsumerStatefulWidget {
   final String groupId;
@@ -22,8 +20,6 @@ class GroupScreen extends ConsumerStatefulWidget {
 class _GroupScreenState extends ConsumerState<GroupScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
-  final _chatCtrl = TextEditingController();
-  final _scrollCtrl = ScrollController();
 
   List<_JoinRequest> _pendingRequests = [];
 
@@ -40,8 +36,6 @@ class _GroupScreenState extends ConsumerState<GroupScreen>
   @override
   void dispose() {
     _tabCtrl.dispose();
-    _chatCtrl.dispose();
-    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -231,22 +225,6 @@ class _GroupScreenState extends ConsumerState<GroupScreen>
     }
   }
 
-  void _sendMessage() {
-    final text = _chatCtrl.text.trim();
-    if (text.isEmpty) return;
-    ref.read(wsProvider.notifier).sendMessage(text);
-    _chatCtrl.clear();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-  }
-
   void _showPendingRequestsSheet() {
     showModalBottomSheet(
       context: context,
@@ -410,11 +388,8 @@ class _GroupScreenState extends ConsumerState<GroupScreen>
                   onTransfer: _transferAdmin,
                   onLeave: _leaveGroup,
                 ),
-                _ChatTab(
-                  chatCtrl: _chatCtrl,
-                  scrollCtrl: _scrollCtrl,
-                  onSend: _sendMessage,
-                ),
+                // Chat reutiliza ChatScreen en modo embebido (sin Scaffold)
+                ChatScreen(eventId: widget.groupId, embedded: true),
               ],
             ),
     );
@@ -491,135 +466,6 @@ class _MembersTab extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Pestaña de chat
-// ---------------------------------------------------------------------------
-class _ChatTab extends ConsumerWidget {
-  final TextEditingController chatCtrl;
-  final ScrollController scrollCtrl;
-  final VoidCallback onSend;
-
-  const _ChatTab({
-    required this.chatCtrl,
-    required this.scrollCtrl,
-    required this.onSend,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final messages = ref.watch(chatProvider);
-    final authState = ref.watch(authProvider);
-    final myId = authState is AuthAuthenticated
-        ? authState.user.id
-        : authState is AuthGuest
-            ? authState.user.id
-            : null;
-
-    return Column(
-      children: [
-        const ReactionPanel(),
-        const Divider(height: 1),
-        Expanded(
-          child: messages.isEmpty
-              ? const Center(
-                  child: Text('Sin mensajes aún',
-                      style: TextStyle(color: Colors.grey)))
-              : ListView.builder(
-                  controller: scrollCtrl,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: messages.length,
-                  itemBuilder: (_, i) => _ChatBubble(
-                    msg: messages[i],
-                    isMe: messages[i].userId == myId,
-                  ),
-                ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(
-            left: 12,
-            right: 12,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 12,
-            top: 8,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: chatCtrl,
-                  maxLength: AppConstants.chatMaxLength,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => onSend(),
-                  decoration: const InputDecoration(
-                    hintText: 'Escribe un mensaje...',
-                    border: OutlineInputBorder(),
-                    counterText: '',
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(onPressed: onSend, icon: const Icon(Icons.send)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Burbuja de chat
-// ---------------------------------------------------------------------------
-class _ChatBubble extends StatelessWidget {
-  final ChatMessage msg;
-  final bool isMe;
-
-  const _ChatBubble({required this.msg, required this.isMe});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
-        decoration: BoxDecoration(
-          color: isMe
-              ? theme.colorScheme.primary
-              : theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (!isMe)
-              Text(
-                msg.name,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            Text(
-              msg.text,
-              style: TextStyle(
-                color: isMe
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

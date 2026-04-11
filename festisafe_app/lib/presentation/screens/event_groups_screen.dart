@@ -130,8 +130,6 @@ class _EventGroupsScreenState extends ConsumerState<EventGroupsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(authProvider);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Grupos del evento'),

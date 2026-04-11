@@ -46,6 +46,7 @@ class GroupNotifier extends StateNotifier<GroupState> {
           id: state.group!.id,
           eventId: state.group!.eventId,
           name: state.group!.name,
+          maxMembers: state.group!.maxMembers,
           members: capped,
         );
         state = GroupState(group: updated);

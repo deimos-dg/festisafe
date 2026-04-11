@@ -14,7 +14,7 @@ router = APIRouter(prefix="/intelligence", tags=["Intelligence"])
 
 @router.post("/geofences")
 def create_geofence(
-    name: String,
+    name: str,
     type: GeofenceType,
     polygon_points: Optional[List[List[float]]] = None,
     latitude: Optional[float] = None,
@@ -80,12 +80,24 @@ def get_heatmap_data(
     current_user: User = Depends(get_current_user)
 ):
     """Retorna puntos de calor basados en la ubicación actual de los empleados"""
+    from app.api.v1.endpoints.companies import check_is_company_admin
     from app.db.models.user_last_location import UserLastLocation
 
+    # Solo admins de empresa o admin global pueden ver el heatmap
+    if not current_user.company_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="No tienes permisos para ver este recurso")
+
+    if current_user.company_id:
+        check_is_company_admin(current_user, current_user.company_id)
+
+    company_filter = (
+        db.query(User.id).filter(User.company_id == current_user.company_id)
+        if current_user.company_id
+        else db.query(User.id)  # admin global ve todos
+    )
+
     points = db.query(UserLastLocation.latitude, UserLastLocation.longitude).filter(
-        UserLastLocation.user_id.in_(
-            db.query(User.id).filter(User.company_id == current_user.company_id)
-        )
+        UserLastLocation.user_id.in_(company_filter)
     ).all()
 
     return [{"lat": p.latitude, "lng": p.longitude, "intensity": 1.0} for p in points]

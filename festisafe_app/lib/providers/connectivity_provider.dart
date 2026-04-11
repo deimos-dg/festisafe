@@ -21,8 +21,9 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityStatus> {
 
   Future<void> _check() async {
     try {
-      // Intentar resolver DNS de Google — si falla, no hay internet
-      final result = await InternetAddress.lookup('google.com')
+      // Usar el health check del propio backend en lugar de google.com
+      // para evitar falsos negativos en redes que bloquean Google
+      final result = await InternetAddress.lookup('festisafe-production.up.railway.app')
           .timeout(const Duration(seconds: 3));
       final isOnline = result.isNotEmpty && result.first.rawAddress.isNotEmpty;
       if (mounted) {

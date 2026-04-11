@@ -401,6 +401,7 @@ def convert_guest(
     validate_password(data.password)
 
     current_user.email = data.email
+    current_user.name = sanitize_name(data.name) if data.name else current_user.name
     current_user.hashed_password = hash_password(data.password)
     current_user.phone = data.phone
     current_user.is_guest = False

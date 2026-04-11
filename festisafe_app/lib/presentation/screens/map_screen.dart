@@ -28,6 +28,8 @@ import '../widgets/meeting_point_marker.dart';
 import '../widgets/battery_indicator.dart';
 import '../widgets/reaction_panel.dart';
 import '../../providers/event_provider.dart';
+import '../../providers/ble_provider.dart';
+import '../../providers/group_provider.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -41,7 +43,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
   final _mapController = MapController();
   late AnimationController _pulseController;
   StreamSubscription? _wsSub;
+  StreamSubscription? _wsStateSub;  // para monitorear estado WS y activar BLE
   Timer? _fallbackTimer;
+  Timer? _bleActivationTimer;       // delay antes de activar BLE
   String? _currentReaction;
   String? _reactionSender;
 
@@ -75,6 +79,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     }
 
     _wsSub = ref.read(wsClientProvider).messageStream.listen(_onWsMessage);
+    _wsStateSub = ref.read(wsClientProvider).stateStream.listen(_onWsStateChange);
     _loadInitialLocations();
     _syncSosState();
     _syncPendingSos();
@@ -184,11 +189,62 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     });
   }
 
+  /// Opción C — BLE como fallback: se activa cuando el WS lleva >15s desconectado.
+  void _onWsStateChange(WsConnectionState wsState) {
+    if (wsState == WsConnectionState.connected) {
+      // WS recuperado — cancelar timer de activación y detener BLE si estaba activo
+      _bleActivationTimer?.cancel();
+      _stopBle();
+    } else if (wsState == WsConnectionState.disconnected) {
+      // Esperar 15s antes de activar BLE para no encenderlo en reconexiones rápidas
+      _bleActivationTimer?.cancel();
+      _bleActivationTimer = Timer(const Duration(seconds: 15), _startBle);
+    }
+  }
+
+  Future<void> _startBle() async {
+    if (!mounted) return;
+    final authState = ref.read(authProvider);
+    final userId = authState is AuthAuthenticated
+        ? authState.user.id
+        : (authState is AuthGuest ? authState.user.id : null);
+    final group = ref.read(groupProvider).group;
+    if (userId == null || group == null) return;
+
+    await ref.read(bleProvider.notifier).start(
+      userId: userId,
+      groupId: group.id,
+      eventId: widget.eventId,
+    );
+
+    // Conectar el callback de SOS BLE al provider de SOS
+    ref.read(bleProvider.notifier).onSosReceived = (data) {
+      final alert = SosAlert(
+        userId: data['userId'] as String,
+        userName: 'BLE',
+        latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+        longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
+        batteryLevel: data['batteryLevel'] as int? ?? 0,
+        activatedAt: DateTime.now(),
+      );
+      ref.read(sosProvider.notifier).onSosReceived(alert);
+    };
+  }
+
+  void _stopBle() {
+    if (ref.read(bleProvider).isActive) {
+      ref.read(bleProvider.notifier).stop();
+    }
+  }
+
   @override
   void dispose() {
     _pulseController.dispose();
     _wsSub?.cancel();
+    _wsStateSub?.cancel();
     _fallbackTimer?.cancel();
+    _bleActivationTimer?.cancel();
+    _stopBle();
     ref.read(locationProvider.notifier).stopTracking();
     ref.read(wsProvider.notifier).disconnect();
     super.dispose();

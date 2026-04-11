@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     # Logging de seguridad
     SECURITY_LOG_LEVEL: str = "INFO"
 
+    # Stripe — pagos B2B
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+
     @field_validator("SECRET_KEY")
     @classmethod
     def secret_key_strength(cls, v: str) -> str:
