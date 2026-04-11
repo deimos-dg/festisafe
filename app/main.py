@@ -59,13 +59,19 @@ app.state.limiter = limiter
 # ---------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
-    try:
-        from app.core.database import create_tables
-        create_tables()
-        logger.info('"FestiSafe API iniciada correctamente"')
-    except Exception as e:
-        logger.error(f'"Error durante la creación de tablas: {e}"')
-        # No relanzamos para que la app intente arrancar de todos modos y el health check pase
+    import time
+    max_retries = 5
+    for i in range(max_retries):
+        try:
+            from app.core.database import create_tables
+            create_tables()
+            logger.info('"FestiSafe API iniciada y tablas verificadas"')
+            break
+        except Exception as e:
+            logger.error(f'"Intento {i+1} fallido al conectar DB: {e}"')
+            if i == max_retries - 1:
+                logger.critical('"No se pudo conectar a la DB tras varios intentos"')
+            time.sleep(2)
 
 
 # ---------------------------------------------------------
