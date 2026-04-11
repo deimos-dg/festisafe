@@ -177,7 +177,7 @@ def get_company_locations(
     return results
 
 from app.db.models.user_location_history import UserLocationHistory
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 @router.get("/history/{user_id}", response_model=list[LocationOut])
 def get_user_location_history(
