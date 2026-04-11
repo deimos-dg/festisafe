@@ -24,6 +24,7 @@ from app.core.audit_log import log_security_event, AuditEvent
 from app.api.v1.endpoints import (
     auth, health, users, gps, groups,
     group_members, events, ws, sos, admin,
+    companies,
 )
 
 # ---------------------------------------------------------
@@ -58,8 +59,8 @@ app.state.limiter = limiter
 # ---------------------------------------------------------
 @app.on_event("startup")
 async def startup_event():
-    create_tables()
-    start_scheduler()
+    from app.core.database import create_tables
+    create_tables()  # Esto crea las tablas en Postgres de Railway
     logger.info('"FestiSafe API iniciada correctamente"')
 
 
@@ -145,6 +146,7 @@ app.include_router(groups.router, prefix=settings.API_V1_STR)
 app.include_router(group_members.router, prefix=settings.API_V1_STR)
 app.include_router(sos.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
+app.include_router(companies.router, prefix=settings.API_V1_STR)
 
 
 # ---------------------------------------------------------

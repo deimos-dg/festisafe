@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     # Base de datos
     DATABASE_URL: str
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def fix_postgres_protocol(cls, v: str) -> str:
+        if v and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
+
     # CORS — lista explícita de orígenes permitidos
     # En producción debe ser la URL del frontend/app, nunca "*"
     BACKEND_CORS_ORIGINS: List[str] = []

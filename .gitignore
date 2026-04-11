@@ -36,6 +36,16 @@ festisafe_app/android/.gradle/
 festisafe_app/android/app/google-services.json
 festisafe_app/ios/Runner/GoogleService-Info.plist
 
+# Keystore y credenciales de firma — NUNCA subir a Git
+*.keystore
+*.jks
+key.properties
+google-play-service-account.json
+*_base64.txt
+
+# Railway
+.railway/
+
 # Script de migración temporal
 migrate.py
 .hypothesis/

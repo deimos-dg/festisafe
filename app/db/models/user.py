@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, String, Boolean, DateTime, Enum, Integer, Index
+from sqlalchemy import Column, String, Boolean, DateTime, Enum, Integer, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -13,6 +13,8 @@ class UserRole(str, enum.Enum):
     user = "user"
     organizer = "organizer"
     admin = "admin"
+    company_admin = "company_admin"
+    staff = "staff"
 
 
 class User(Base):
@@ -36,6 +38,9 @@ class User(Base):
     must_change_password = Column(Boolean, default=False)
     password_changed_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relación con Empresa
+    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, index=True)
+
     # Cuenta de invitado (creada automáticamente al canjear un Guest_Code)
     is_guest = Column(Boolean, default=False, index=True)
 
@@ -47,3 +52,4 @@ class User(Base):
     admin_groups = relationship("Group", foreign_keys="Group.admin_id", back_populates="admin")
     device_tokens = relationship("DeviceToken", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+    company = relationship("Company", back_populates="users")

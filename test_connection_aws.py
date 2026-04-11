@@ -14,12 +14,12 @@ import uuid
 
 import requests
 
-BASE_URL = "https://festisafe-alb-814303465.us-east-1.elb.amazonaws.com"
+BASE_URL = "http://festisafe-alb-814303465.us-east-1.elb.amazonaws.com"
 TIMEOUT = 15
 
 # Email único por ejecución para evitar conflictos de unicidad
 _RUN_ID = uuid.uuid4().hex[:8]
-TEST_EMAIL = f"test_{_RUN_ID}@festisafe-test.com"
+TEST_EMAIL = f"ogichidiaz@gmail.com"
 TEST_PASSWORD = "TestPass1!secure"
 TEST_NAME = "Test AWS Connection"
 
