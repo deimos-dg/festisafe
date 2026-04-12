@@ -208,8 +208,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     final userId = authState is AuthAuthenticated
         ? authState.user.id
         : (authState is AuthGuest ? authState.user.id : null);
-    final group = ref.read(groupProvider).group;
-    if (userId == null || group == null) return;
+    if (userId == null) return;
+
+    // groupProvider puede estar vacío si BLE se activa antes de que cargue el grupo.
+    // Reintentamos hasta 3 veces con 3s de espera entre intentos.
+    GroupModel? group;
+    for (int i = 0; i < 3; i++) {
+      group = ref.read(groupProvider).group;
+      if (group != null) break;
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted) return;
+    }
+    if (group == null) return; // Sin grupo — BLE no aplica
 
     await ref.read(bleProvider.notifier).start(
       userId: userId,

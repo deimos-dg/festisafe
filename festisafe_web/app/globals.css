@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   --color-background: #030712;
@@ -40,4 +41,50 @@ body {
   background: linear-gradient(to right, #818cf8, #c084fc);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Inputs y botones premium reutilizables */
+.premium-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.875rem;
+  color: white;
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+}
+.premium-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+}
+.premium-input option {
+  background: #0f172a;
+  color: white;
+}
+
+.premium-button {
+  background: #4f46e5;
+  color: white;
+  border-radius: 1rem;
+  padding: 1rem 1.5rem;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.premium-button:hover:not(:disabled) {
+  background: #4338ca;
+}
+.premium-button:disabled {
+  background: #1e293b;
+  cursor: not-allowed;
+  opacity: 0.6;
 }

@@ -388,8 +388,11 @@ class _GroupScreenState extends ConsumerState<GroupScreen>
                   onTransfer: _transferAdmin,
                   onLeave: _leaveGroup,
                 ),
-                // Chat reutiliza ChatScreen en modo embebido (sin Scaffold)
-                ChatScreen(eventId: widget.groupId, embedded: true),
+                // Chat reutiliza ChatScreen en modo embebido — usa el eventId del grupo
+                ChatScreen(
+                  eventId: group?.eventId ?? widget.groupId,
+                  embedded: true,
+                ),
               ],
             ),
     );

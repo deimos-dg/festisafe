@@ -45,32 +45,51 @@ async def send_broadcast(
     title: str,
     content: str,
     target: BroadcastTarget,
+    company_id: Optional[UUID] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Envía un mensaje masivo a los empleados de la empresa"""
-    if not current_user.company_id:
-        raise HTTPException(status_code=403)
+    """
+    Envía un mensaje masivo a los empleados.
+    - Super admin: puede especificar company_id o dejar vacío para broadcast global.
+    - Company admin: solo puede enviar a su propia empresa.
+    """
+    # Determinar la empresa destino
+    if current_user.role == UserRole.admin:
+        # Super admin puede enviar a una empresa específica o a todas
+        target_company_id = company_id
+    elif current_user.company_id:
+        target_company_id = current_user.company_id
+    else:
+        raise HTTPException(status_code=403, detail="No tienes empresa asignada")
 
     msg = BroadcastMessage(
-        company_id=current_user.company_id,
+        company_id=target_company_id,
         sender_id=current_user.id,
         title=title,
         content=content,
-        target_role=target
+        target_role=target,
     )
     db.add(msg)
     db.commit()
 
-    # Broadcast vía WebSocket a todos los conectados de la empresa
-    topic = f"company_{current_user.company_id}"
-    alert = {
-        "type": "broadcast",
-        "title": title,
-        "content": content,
-        "sender": current_user.name
-    }
-    await manager.broadcast_to_topic(topic, alert)
+    if target_company_id:
+        # Broadcast a empresa específica
+        topic = f"company_{target_company_id}"
+        await manager.broadcast_to_topic(topic, {
+            "type": "broadcast",
+            "title": title,
+            "content": content,
+            "sender": current_user.name,
+        })
+    else:
+        # Super admin broadcast global — enviar a todos los tópicos activos
+        alert = {"type": "broadcast", "title": title, "content": content, "sender": current_user.name}
+        companies = db.query(User.company_id).filter(
+            User.company_id != None
+        ).distinct().all()
+        for (cid,) in companies:
+            await manager.broadcast_to_topic(f"company_{cid}", alert)
 
     return {"status": "sent", "id": str(msg.id)}
 

@@ -230,11 +230,61 @@ def deactivate_expired_events():
         db.close()
 
 
+def notify_expiring_contracts():
+    """
+    Detecta empresas cuyo contrato vence en los próximos 7 días
+    y envía una alerta WS al portal para que el admin lo vea.
+    Se ejecuta una vez al día.
+    """
+    db: Session = SessionLocal()
+    try:
+        import asyncio
+        from app.core.ws_manager import manager
+        from app.db.models.company import Company, CompanyStatus
+
+        now = datetime.utcnow()
+        warning_cutoff = now + timedelta(days=7)
+
+        expiring = db.query(Company).filter(
+            Company.status == CompanyStatus.active,
+            Company.contract_end != None,
+            Company.contract_end > now,
+            Company.contract_end <= warning_cutoff,
+        ).all()
+
+        for company in expiring:
+            days_left = (company.contract_end - now).days
+            alert = {
+                "type": "contract_expiring",
+                "company_id": str(company.id),
+                "company_name": company.name,
+                "days_left": days_left,
+                "contract_end": company.contract_end.isoformat(),
+            }
+            # Notificar al super admin via broadcast general
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    asyncio.ensure_future(manager.broadcast_to_topic("super_admin", alert))
+                else:
+                    loop.run_until_complete(manager.broadcast_to_topic("super_admin", alert))
+            except RuntimeError:
+                asyncio.run(manager.broadcast_to_topic("super_admin", alert))
+
+            logger.info(f"Scheduler: contrato de '{company.name}' vence en {days_left} días")
+
+    except Exception as e:
+        logger.error(f"Scheduler notify_expiring_contracts error: {e}")
+    finally:
+        db.close()
+
+
 def start_scheduler():
     scheduler.add_job(check_geofences, "interval", minutes=2, id="check_geofences")
     scheduler.add_job(deactivate_expired_events, "interval", minutes=5, id="deactivate_events")
     scheduler.add_job(cleanup_expired_groups, "interval", minutes=30, id="cleanup_groups")
     scheduler.add_job(cleanup_revoked_tokens, "interval", hours=1, id="cleanup_tokens")
     scheduler.add_job(cleanup_expired_reset_tokens, "interval", hours=24, id="cleanup_reset_tokens")
+    scheduler.add_job(notify_expiring_contracts, "interval", hours=24, id="notify_expiring", jitter=3600)
     scheduler.start()
     logger.info("Scheduler iniciado")

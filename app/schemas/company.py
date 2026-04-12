@@ -40,7 +40,8 @@ class CompanyBase(BaseModel):
     total_folios_contracted: int = Field(default=0, ge=0)
 
 class CompanyCreate(CompanyBase):
-    pass
+    contract_start: Optional[datetime] = None
+    contract_end: Optional[datetime] = None
 
 class CompanyUpdate(BaseModel):
     name: Optional[str] = None

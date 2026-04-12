@@ -18,10 +18,17 @@ export default function LoginPage() {
 
     try {
       const data = await authApi.login(email, password);
-      saveToken(data.access_token);
+      saveToken(data.access_token, data.user?.role, data.user);
       router.push('/admin/companies');
-    } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Credenciales inválidas';
+      // Detectar must_change_password
+      if (msg.includes('cambiar tu contraseña')) {
+        saveToken('', undefined, { email });
+        router.push('/change-password?email=' + encodeURIComponent(email));
+        return;
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
