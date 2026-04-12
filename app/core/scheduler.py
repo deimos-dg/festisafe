@@ -249,7 +249,8 @@ def purge_location_history():
         db.close()
 
 
-def notify_expiring_contracts():    """
+def notify_expiring_contracts():
+    """
     Detecta empresas cuyo contrato vence en los próximos 7 días
     y envía una alerta WS al portal para que el admin lo vea.
     Se ejecuta una vez al día.

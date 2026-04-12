@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FestiSafe Web — Panel de Administración
 
-## Getting Started
+Portal web de administración para el sistema FestiSafe. Construido con Next.js 16 y desplegado en Railway.
 
-First, run the development server:
+**URL de producción:** `https://festisafe-web-production.up.railway.app`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Stack
+
+| Componente | Tecnología |
+|---|---|
+| Framework | Next.js 16.2 (App Router, Turbopack) |
+| Lenguaje | TypeScript 5 |
+| Estilos | Tailwind CSS 4 |
+| Mapas | Leaflet + react-leaflet |
+| Deploy | Railway (standalone server) |
+
+---
+
+## Estructura
+
+```
+festisafe_web/
+├── app/
+│   ├── page.tsx                    # Login
+│   ├── change-password/            # Cambio obligatorio de contraseña
+│   ├── admin/
+│   │   ├── layout.tsx              # Sidebar de navegación con control de roles
+│   │   ├── page.tsx                # Dashboard con métricas y alertas
+│   │   ├── companies/
+│   │   │   ├── page.tsx            # Lista de empresas (vista lista/grid)
+│   │   │   └── [id]/page.tsx       # Detalle de empresa: folios y transacciones
+│   │   ├── billing/page.tsx        # Historial de pagos con paginación
+│   │   ├── history/page.tsx        # Empresas con contrato finalizado
+│   │   ├── users/page.tsx          # Gestión de equipo interno (solo super admin)
+│   │   └── profile/page.tsx        # Perfil y cambio de contraseña del admin
+│   └── portal/
+│       ├── layout.tsx              # Reutiliza sidebar del admin
+│       ├── map/
+│       │   ├── layout.tsx          # Layout vacío (mapa es fullscreen)
+│       │   └── page.tsx            # Mapa en vivo con Leaflet
+│       └── folios/page.tsx         # Gestión de folios por empresa con CSV
+├── lib/
+│   └── api.ts                      # Cliente HTTP, auth helpers, token management
+└── middleware.ts                   # Protección de rutas por autenticación y rol
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Roles y accesos
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Sección | Super Admin | Admin |
+|---|---|---|
+| Dashboard | ✅ | ✅ |
+| Empresas | ✅ | ✅ |
+| Detalle de empresa | ✅ | ✅ |
+| Mapa en vivo | ✅ | ✅ |
+| Folios | ✅ | ✅ |
+| Facturación | ✅ | ❌ |
+| Historial | ✅ | ❌ |
+| Mi Equipo | ✅ | ❌ |
+| Perfil | ✅ | ✅ |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Variables de entorno
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+NEXT_PUBLIC_API_URL=https://festisafe-production.up.railway.app
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Desarrollo local
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+cd festisafe_web
+npm install
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Abre `http://localhost:3000`.
+
+---
+
+## Deploy en Railway
+
+El servicio usa el modo `standalone` de Next.js.
+
+**Start command:**
+```
+cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public && HOSTNAME=0.0.0.0 node .next/standalone/server.js
+```
+
+**Puerto:** 8080 (Railway lo asigna automáticamente).
+
+---
+
+## Autenticación
+
+El token JWT se guarda en `sessionStorage` (no `localStorage`) para mayor seguridad ante XSS. Una cookie ligera `fs_authed` permite al middleware de Next.js verificar autenticación en SSR sin exponer el JWT. El rol se persiste en `fs_role` para proteger rutas de super admin.
+
+---
+
+## Funcionalidades principales
+
+- **Empresas** — alta, baja, suspensión, extensión de contrato, registro de pagos manuales (efectivo/transferencia/Stripe), vista lista y cuadrícula
+- **Detalle de empresa** — folios con búsqueda y filtros, historial de transacciones
+- **Facturación** — historial paginado con búsqueda, filtros por estado, stats de ingresos
+- **Historial** — empresas con contrato expirado, tasa de cobertura de folios
+- **Mapa en vivo** — Leaflet con tiles oscuros CartoDB, marcadores de empleados en tiempo real, alertas SOS, log de geofences, broadcast masivo
+- **Folios** — carga de CSV con parsing en cliente, preview antes de confirmar, exportar Excel
+- **Mi Equipo** — crear empleados internos con rol Admin o Viewer, activar/desactivar
+- **Perfil** — actualizar datos, cambiar contraseña con re-login automático
+- **Dashboard** — banner de contratos próximos a vencer (≤7 días)
