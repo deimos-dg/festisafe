@@ -230,8 +230,26 @@ def deactivate_expired_events():
         db.close()
 
 
-def notify_expiring_contracts():
-    """
+def purge_location_history():
+    """Elimina puntos del historial de ubicaciones con más de 30 días."""
+    db: Session = SessionLocal()
+    try:
+        from app.db.models.user_location_history import UserLocationHistory
+        cutoff = datetime.utcnow() - timedelta(days=30)
+        deleted = db.query(UserLocationHistory).filter(
+            UserLocationHistory.created_at < cutoff
+        ).delete(synchronize_session=False)
+        if deleted:
+            db.commit()
+            logger.info(f"Scheduler: eliminados {deleted} puntos de historial de ubicación")
+    except Exception as e:
+        logger.error(f"Scheduler purge_location_history error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+
+def notify_expiring_contracts():    """
     Detecta empresas cuyo contrato vence en los próximos 7 días
     y envía una alerta WS al portal para que el admin lo vea.
     Se ejecuta una vez al día.
@@ -286,5 +304,6 @@ def start_scheduler():
     scheduler.add_job(cleanup_revoked_tokens, "interval", hours=1, id="cleanup_tokens")
     scheduler.add_job(cleanup_expired_reset_tokens, "interval", hours=24, id="cleanup_reset_tokens")
     scheduler.add_job(notify_expiring_contracts, "interval", hours=24, id="notify_expiring", jitter=3600)
+    scheduler.add_job(purge_location_history, "interval", days=7, id="purge_history")
     scheduler.start()
     logger.info("Scheduler iniciado")

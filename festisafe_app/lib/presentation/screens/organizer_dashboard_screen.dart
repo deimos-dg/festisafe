@@ -209,6 +209,85 @@ class _OrganizerDashboardScreenState
     }
   }
 
+  Future<void> _showBroadcastDialog() async {
+    final titleCtrl = TextEditingController();
+    final contentCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Enviar mensaje a todos'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: titleCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Título',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.title),
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: contentCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Mensaje',
+                  border: OutlineInputBorder(),
+                  hintText: 'Ej: El evento comienza en 10 minutos...',
+                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(context);
+              try {
+                await ApiClient().dio.post(
+                  '/intelligence/broadcast',
+                  data: {
+                    'title': titleCtrl.text.trim(),
+                    'content': contentCtrl.text.trim(),
+                    'target': 'all',
+                  },
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Mensaje enviado a todos los participantes'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.send),
+            label: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _setMeetingPoint() async {
     final nameCtrl = TextEditingController();
     final latCtrl = TextEditingController();
@@ -431,6 +510,18 @@ class _OrganizerDashboardScreenState
                             onPressed: _setMeetingPoint,
                             icon: const Icon(Icons.flag_outlined),
                             label: const Text('Punto de encuentro'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _showBroadcastDialog,
+                            icon: const Icon(Icons.campaign_outlined),
+                            label: const Text('Enviar broadcast'),
                           ),
                         ),
                       ],

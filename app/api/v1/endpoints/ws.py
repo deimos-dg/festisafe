@@ -13,6 +13,7 @@ from app.db.models.event_participant import EventParticipant
 from app.db.models.group import Group
 from app.db.models.group_member import GroupMember
 from app.db.models.user_last_location import UserLastLocation
+from app.db.models.user_location_history import UserLocationHistory
 
 router = APIRouter(tags=["WebSocket"])
 
@@ -88,6 +89,7 @@ def _get_group_for_user(db: Session, event_id, user_id) -> Group | None:
 
 
 def _upsert_location(db: Session, user_id, event_id, lat: float, lon: float, accuracy: float | None):
+    """Actualiza last_location y escribe un punto en el historial."""
     loc = db.query(UserLastLocation).filter(
         UserLastLocation.user_id == user_id,
         UserLastLocation.event_id == event_id,
@@ -97,6 +99,15 @@ def _upsert_location(db: Session, user_id, event_id, lat: float, lon: float, acc
     else:
         loc = UserLastLocation(user_id=user_id, event_id=event_id, latitude=lat, longitude=lon, accuracy=accuracy)
         db.add(loc)
+
+    # Escribir punto en el historial para reconstruir trayectorias
+    db.add(UserLocationHistory(
+        user_id=user_id,
+        event_id=event_id,
+        latitude=lat,
+        longitude=lon,
+        accuracy=accuracy,
+    ))
     db.commit()
 
 

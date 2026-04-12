@@ -30,6 +30,7 @@ import '../widgets/reaction_panel.dart';
 import '../../providers/event_provider.dart';
 import '../../providers/ble_provider.dart';
 import '../../providers/group_provider.dart';
+import '../../data/models/event.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -83,8 +84,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     _loadInitialLocations();
     _syncSosState();
     _syncPendingSos();
+    _loadEventData(); // cargar punto de encuentro
     Future.delayed(const Duration(seconds: 5), _checkFallback);
   }
+
+  /// Carga el evento para obtener el punto de encuentro.
+  Future<void> _loadEventData() async {
+    try {
+      final service = ref.read(eventServiceProvider);
+      final events = await service.getMyEvents();
+      final event = events.where((e) => e.id == widget.eventId).firstOrNull;
+      if (event != null && event.hasMeetingPoint && mounted) {
+        setState(() => _meetingPoint = event);
+      }
+    } catch (_) {}
+  }
+
+  EventModel? _meetingPoint;
 
   // (Mantengo lógica de sincronización igual para no romper funcionalidad)
   Future<void> _syncPendingSos() async {
@@ -135,9 +151,23 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
           _currentReaction = msg.payload['reaction']; 
           _reactionSender = msg.payload['name']; 
         });
-      default: break;
+      default:
+        // Punto de encuentro del grupo actualizado por el admin
+        if (msg.type.name == 'group_meeting_point' || msg.payload['type'] == 'group_meeting_point') {
+          final lat = (msg.payload['lat'] as num?)?.toDouble();
+          final lng = (msg.payload['lng'] as num?)?.toDouble();
+          final name = msg.payload['name'] as String?;
+          if (lat != null && lng != null && mounted) {
+            setState(() {
+              _groupMeetingPoint = (lat: lat, lng: lng, name: name ?? '');
+            });
+          }
+        }
+        break;
     }
   }
+
+  ({double lat, double lng, String name})? _groupMeetingPoint;
 
   void _showSosNotification(SosAlert alert) {
     if (!mounted) return;
@@ -332,6 +362,20 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
                       width: 100, height: 100,
                       child: _SosRadarMarker(alert: alert, animation: _pulseController),
                     )),
+                    // Punto de encuentro del evento
+                    if (_meetingPoint != null && _meetingPoint!.hasMeetingPoint)
+                      Marker(
+                        point: LatLng(_meetingPoint!.meetingPointLat!, _meetingPoint!.meetingPointLng!),
+                        width: 120, height: 80,
+                        child: MeetingPointMarker(name: _meetingPoint!.meetingPointName ?? 'Punto de encuentro'),
+                      ),
+                    // Punto de encuentro del grupo (actualizado en tiempo real)
+                    if (_groupMeetingPoint != null)
+                      Marker(
+                        point: LatLng(_groupMeetingPoint!.lat, _groupMeetingPoint!.lng),
+                        width: 120, height: 80,
+                        child: MeetingPointMarker(name: _groupMeetingPoint!.name.isNotEmpty ? _groupMeetingPoint!.name : 'Punto del grupo'),
+                      ),
                   ],
                 ),
               ],
@@ -392,9 +436,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _QuickAction(icon: Icons.chat_bubble_outline, label: 'Chat', onTap: () => context.push('/chat/${widget.eventId}')),
+                            _QuickAction(icon: Icons.chat_bubble_outline, label: 'Chat', onTap: () => context.push('/map/${widget.eventId}/chat')),
                             SosButton(eventId: widget.eventId),
-                            _QuickAction(icon: Icons.settings_outlined, label: 'Ajustes', onTap: () {}),
+                            _QuickAction(
+                              icon: locationState.isVisible ? Icons.visibility : Icons.visibility_off,
+                              label: locationState.isVisible ? 'Visible' : 'Oculto',
+                              onTap: () => _toggleVisibility(locationState.isVisible),
+                            ),
                           ],
                         ),
                       ),
@@ -407,6 +455,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
         ],
       ),
     );
+  }
+
+  Future<void> _toggleVisibility(bool currentlyVisible) async {
+    try {
+      await LocationService().setVisibility(widget.eventId, !currentlyVisible);
+      // Actualizar estado local via el notifier
+      ref.read(locationProvider.notifier).setVisibility(!currentlyVisible);
+    } catch (_) {}
   }
 
   void _showMemberPanel(MemberLocation member) {

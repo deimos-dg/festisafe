@@ -56,6 +56,10 @@ class LocationNotifier extends StateNotifier<LocationState> {
     state = state.copyWith(isTracking: false);
   }
 
+  void setVisibility(bool visible) {
+    state = state.copyWith(isVisible: visible);
+  }
+
   @override
   void dispose() {
     _trackingSub?.cancel();

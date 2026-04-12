@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { adminApi, fetchWithAuth } from '@/lib/api';
 
 interface Company {
@@ -365,10 +366,15 @@ interface ViewProps {
 }
 
 function ActionButtons({ company, payments, actionLoading, onToggle, onPayment, onExtend, onDelete }: ViewProps & { company: Company }) {
+  const router = useRouter();
   const hasPaid = payments[company.id];
   const isStatusLoading = actionLoading === company.id + '_status';
   return (
     <div className="flex flex-wrap gap-2">
+      <button onClick={() => router.push(`/admin/companies/${company.id}`)}
+        className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 transition-all">
+        👁 Ver
+      </button>
       <button onClick={() => onToggle(company)} disabled={isStatusLoading}
         className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
           company.status === 'active'

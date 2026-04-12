@@ -59,6 +59,16 @@ def update_location(
         )
         db.add(location)
 
+    # Escribir en historial
+    from app.db.models.user_location_history import UserLocationHistory
+    db.add(UserLocationHistory(
+        user_id=current_user.id,
+        event_id=eid,
+        latitude=data.latitude,
+        longitude=data.longitude,
+        accuracy=data.accuracy,
+    ))
+
     db.commit()
     db.refresh(location)
 

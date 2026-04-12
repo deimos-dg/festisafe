@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import 'onboarding_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -54,7 +55,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cuenta creada. Inicia sesión.')),
       );
-      context.go('/login');
+      // Mostrar onboarding si es la primera vez
+      final onboardingDone = await OnboardingScreen.isDone();
+      if (!mounted) return;
+      if (!onboardingDone) {
+        context.go('/onboarding');
+      } else {
+        context.go('/login');
+      }
     } else if (state is AuthError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(state.message), backgroundColor: Colors.red),

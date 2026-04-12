@@ -50,7 +50,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finish() async {
     await OnboardingScreen.markDone();
-    if (mounted) context.go('/');
+    if (!mounted) return;
+    // Después del onboarding, verificar sesión y navegar apropiadamente
+    context.go('/');
   }
 
   @override

@@ -34,7 +34,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authProvider);
       final isAuth = authState is AuthAuthenticated || authState is AuthGuest;
       final isLoading = authState is AuthLoading || authState is AuthInitial;
-      final publicRoutes = ['/', '/login', '/register', '/reset-password', '/change-password'];
+      final publicRoutes = ['/', '/login', '/register', '/reset-password', '/change-password', '/onboarding'];
       // /join/:code es accesible sin auth (redirige a login con returnTo)
       final isPublic = publicRoutes.contains(state.matchedLocation) ||
           state.matchedLocation.startsWith('/join/');
