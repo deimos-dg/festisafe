@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi } from '@/lib/api';
+import { authApi, saveToken } from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,7 +18,7 @@ export default function LoginPage() {
 
     try {
       const data = await authApi.login(email, password);
-      localStorage.setItem('festisafe_token', data.access_token);
+      saveToken(data.access_token);
       router.push('/admin/companies');
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas');

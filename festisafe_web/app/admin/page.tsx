@@ -101,7 +101,7 @@ export default function OwnerAdminDashboard() {
 
       {/* Footer / Status Log */}
       <div className="mt-16 flex justify-between items-center text-[10px] font-black text-slate-700 uppercase tracking-widest px-8">
-        <p>© 2024 FestiSafe Cloud Architecture</p>
+        <p>© 2026 FestiSafe Cloud Architecture</p>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-emerald-500 rounded-full" />
           <p>Railway Node: USA-EAST-1 (Active)</p>

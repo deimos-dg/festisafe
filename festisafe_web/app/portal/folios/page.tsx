@@ -21,9 +21,8 @@ export default function FoliosManagementPage() {
   };
 
   const handleExport = () => {
-    // Usamos el origen actual del navegador para que no se vea la URL de Railway directamente
-    const baseUrl = window.location.origin.replace('3000', '8000'); // Ajuste para local vs prod
-    window.open(`${baseUrl}/api/v1/companies/MY_ID/folios/export`, '_blank');
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://festisafe-production.up.railway.app';
+    window.open(`${apiBase}/api/v1/companies/MY_ID/folios/export`, '_blank');
   };
 
   return (
