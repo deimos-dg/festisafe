@@ -21,6 +21,7 @@ import '../../presentation/screens/admin_screen.dart';
 import '../../presentation/screens/forgot_password_screen.dart';
 import '../../presentation/screens/password_reset_screen.dart';
 import '../../presentation/screens/chat_screen.dart';
+import '../../presentation/screens/onboarding_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final notifier = _AuthRouterNotifier(ref);
@@ -46,6 +47,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
       GoRoute(path: '/', builder: (_, __) => const WelcomeScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),

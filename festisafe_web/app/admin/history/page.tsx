@@ -14,9 +14,13 @@ interface Company {
   contract_end: string;
 }
 
+const PAGE_SIZE = 15;
+
 export default function HistoryPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchWithAuth('/companies/history')
@@ -24,6 +28,17 @@ export default function HistoryPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { setPage(1); }, [search]);
+
+  const filtered = companies.filter(c =>
+    !search ||
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.primary_email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const totalFoliosUsed = companies.reduce((acc, c) => acc + c.used_folios_count, 0);
   const totalFoliosContracted = companies.reduce((acc, c) => acc + c.total_folios_contracted, 0);
@@ -60,6 +75,13 @@ export default function HistoryPage() {
         </div>
       </div>
 
+      {/* Búsqueda */}
+      <div className="mb-6">
+        <input type="text" placeholder="Buscar empresa..."
+          value={search} onChange={e => setSearch(e.target.value)}
+          className="w-full max-w-sm bg-white/[0.05] border border-white/10 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-indigo-500 transition-all" />
+      </div>
+
       {loading ? (
         <div className="flex justify-center items-center h-48">
           <div className="w-10 h-10 border-4 border-slate-500/20 border-t-slate-500 rounded-full animate-spin" />
@@ -84,7 +106,7 @@ export default function HistoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.02]">
-              {companies.map(c => {
+              {paginated.map(c => {
                 const days = Math.ceil(
                   (new Date(c.contract_end).getTime() - new Date(c.contract_start).getTime()) / 86400000
                 );
@@ -130,6 +152,25 @@ export default function HistoryPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Paginación */}
+      {!loading && filtered.length > PAGE_SIZE && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+            {filtered.length} resultados · Página {page} de {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              ← Anterior
+            </button>
+            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+              Siguiente →
+            </button>
+          </div>
         </div>
       )}
     </div>

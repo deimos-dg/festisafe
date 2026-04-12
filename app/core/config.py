@@ -35,8 +35,9 @@ class Settings(BaseSettings):
         return v
 
     # CORS — lista explícita de orígenes permitidos
-    # En producción debe ser la URL del frontend/app, nunca "*"
-    BACKEND_CORS_ORIGINS: List[str] = ["*"]
+    # En producción: ["https://festisafe-web-production.up.railway.app"]
+    # En desarrollo: ["*"]
+    BACKEND_CORS_ORIGINS: List[str] = ["https://festisafe-web-production.up.railway.app", "http://localhost:3000"]
 
     # Hosts permitidos — previene Host header injection y enmascaramiento de puertos
     # En producción: ["festisafe-alb-814303465.us-east-1.elb.amazonaws.com", "api.festisafe.com"]

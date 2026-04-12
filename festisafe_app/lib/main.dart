@@ -9,6 +9,7 @@ import 'app.dart';
 import 'core/router/app_router.dart';
 import 'providers/auth_provider.dart';
 import 'data/services/notification_service.dart';
+import 'presentation/screens/onboarding_screen.dart';
 
 /// EventId pendiente de navegación desde notificación
 String? _pendingNavigationEventId;
@@ -67,6 +68,12 @@ class _AppInitState extends ConsumerState<_AppInit> {
     super.initState();
     Future.microtask(() async {
       try {
+        // Mostrar onboarding la primera vez que se abre la app
+        final onboardingDone = await OnboardingScreen.isDone();
+        if (!onboardingDone && mounted) {
+          ref.read(routerProvider).go('/onboarding');
+          return;
+        }
         await ref.read(authProvider.notifier).checkSession();
         await NotificationService().init();
       } catch (e) {
