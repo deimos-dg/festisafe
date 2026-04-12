@@ -31,7 +31,7 @@ export default function OwnerAdminDashboard() {
 
   const quickActions = [
     { name: 'Gestión de Empresas', desc: 'Altas, bajas y folios iniciales', href: '/admin/companies', icon: '🏢' },
-    { name: 'Infraestructura Cloud', desc: 'Monitoreo de Railway y DB', href: '#', icon: '🛰️' },
+    { name: 'Facturación', desc: 'Pagos, transacciones y contratos', href: '/admin/billing', icon: '💳' },
     { name: 'Soporte B2B', desc: 'Tickets y atención a clientes', href: '#', icon: '📩' },
     { name: 'Reportes Globales', desc: 'Exportación masiva de datos', href: '#', icon: '📊' },
   ];

@@ -4,7 +4,7 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.database import get_db
 from app.api.deps import get_current_user
@@ -183,3 +183,111 @@ def get_company_folios(
 ):
     check_is_company_admin(current_user, company_id)
     return db.query(Folio).filter(Folio.company_id == company_id).all()
+
+
+# ---------------------------------------------------------------------------
+# Gestión de estado y contrato de empresa (solo Super Admin)
+# ---------------------------------------------------------------------------
+
+@router.patch("/{company_id}/status", response_model=CompanyResponse)
+def set_company_status(
+    company_id: UUID,
+    status: CompanyStatus,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Activa o suspende una empresa.
+    Cuando está suspendida, sus usuarios no pueden hacer login.
+    """
+    check_is_super_admin(current_user)
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+    company.status = status
+    company.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@router.post("/{company_id}/extend", response_model=CompanyResponse)
+def extend_contract(
+    company_id: UUID,
+    days: int,
+    payment_method: str = "transfer",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Extiende el contrato de una empresa por N días calendario.
+    Solo disponible si la empresa tiene al menos un pago completado (Stripe o manual).
+    payment_method: 'stripe' | 'transfer' | 'cash'
+    """
+    check_is_super_admin(current_user)
+    if days < 1 or days > 3650:
+        raise HTTPException(status_code=400, detail="Días inválidos (1-3650)")
+
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+
+    # Verificar que la empresa tiene al menos un pago completado
+    from app.db.models.transaction import Transaction, TransactionStatus
+    has_payment = db.query(Transaction).filter(
+        Transaction.company_id == company_id,
+        Transaction.status == TransactionStatus.completed,
+    ).first()
+    if not has_payment:
+        raise HTTPException(
+            status_code=400,
+            detail="La empresa no tiene pagos completados. Registra un pago primero.",
+        )
+
+    now = datetime.utcnow()
+    # Si el contrato ya expiró, extender desde hoy; si no, desde la fecha actual de fin
+    base = company.contract_end if company.contract_end and company.contract_end > now else now
+    company.contract_end = base + timedelta(days=days)
+    company.status = CompanyStatus.active
+    company.updated_at = now
+    db.commit()
+    db.refresh(company)
+    return company
+
+
+@router.post("/{company_id}/manual-payment", response_model=CompanyResponse)
+def register_manual_payment(
+    company_id: UUID,
+    amount: float,
+    payment_method: str = "transfer",
+    description: str = "Pago manual registrado por admin",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Registra un pago manual (transferencia o efectivo) para una empresa.
+    Esto habilita el botón de extensión de días en el panel.
+    """
+    check_is_super_admin(current_user)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="El monto debe ser mayor a 0")
+
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Empresa no encontrada")
+
+    from app.db.models.transaction import Transaction, TransactionStatus, TransactionType
+    tx = Transaction(
+        company_id=company_id,
+        user_id=current_user.id,
+        amount=amount,
+        type=TransactionType.service_day,
+        quantity=1,
+        status=TransactionStatus.completed,
+        description=f"{description} ({payment_method})",
+        provider_reference=f"manual_{payment_method}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+    )
+    db.add(tx)
+    db.commit()
+    db.refresh(company)
+    return company

@@ -9,6 +9,7 @@ from app.core.security import decode_token
 from app.core.config import settings
 from app.crud.revoked_token import is_token_revoked
 from app.db.models.user import User
+from app.db.models.company import Company, CompanyStatus
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -61,6 +62,15 @@ def get_current_user(
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Sesión expirada por cambio de contraseña",
+            )
+
+    # Verificar que la empresa del usuario no esté suspendida
+    if user.company_id:
+        company = db.query(Company).filter(Company.id == user.company_id).first()
+        if company and company.status == CompanyStatus.suspended:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tu empresa está suspendida. Contacta al administrador.",
             )
 
     return user
