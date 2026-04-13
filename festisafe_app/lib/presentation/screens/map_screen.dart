@@ -648,13 +648,3 @@ class _GlassMemberPanel extends StatelessWidget {
     );
   }
 }
-
-  double? _calcDistance(MemberLocation member) {
-    final pos = ref.read(locationProvider).currentPosition;
-    if (pos == null) return null;
-    const dist = Distance();
-    return dist.as(LengthUnit.Meter,
-        LatLng(pos.latitude, pos.longitude),
-        LatLng(member.latitude, member.longitude)    );
-  }
-}
