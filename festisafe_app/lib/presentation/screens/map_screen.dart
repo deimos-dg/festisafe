@@ -31,6 +31,7 @@ import '../../providers/event_provider.dart';
 import '../../providers/ble_provider.dart';
 import '../../providers/group_provider.dart';
 import '../../data/models/event.dart';
+import '../../data/models/group.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   final String eventId;
@@ -367,14 +368,22 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
                       Marker(
                         point: LatLng(_meetingPoint!.meetingPointLat!, _meetingPoint!.meetingPointLng!),
                         width: 120, height: 80,
-                        child: MeetingPointMarker(name: _meetingPoint!.meetingPointName ?? 'Punto de encuentro'),
+                        child: MeetingPointMarker(
+                          latitude: _meetingPoint!.meetingPointLat!,
+                          longitude: _meetingPoint!.meetingPointLng!,
+                          name: _meetingPoint!.meetingPointName ?? 'Punto de encuentro',
+                        ),
                       ),
                     // Punto de encuentro del grupo (actualizado en tiempo real)
                     if (_groupMeetingPoint != null)
                       Marker(
                         point: LatLng(_groupMeetingPoint!.lat, _groupMeetingPoint!.lng),
                         width: 120, height: 80,
-                        child: MeetingPointMarker(name: _groupMeetingPoint!.name.isNotEmpty ? _groupMeetingPoint!.name : 'Punto del grupo'),
+                        child: MeetingPointMarker(
+                          latitude: _groupMeetingPoint!.lat,
+                          longitude: _groupMeetingPoint!.lng,
+                          name: _groupMeetingPoint!.name.isNotEmpty ? _groupMeetingPoint!.name : 'Punto del grupo',
+                        ),
                       ),
                   ],
                 ),
