@@ -490,6 +490,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             SegmentedButton<AppThemeMode>(
               segments: const [
                 ButtonSegment(
+                  value: AppThemeMode.system,
+                  icon: Icon(Icons.brightness_auto),
+                  label: Text('Auto'),
+                ),
+                ButtonSegment(
                   value: AppThemeMode.light,
                   icon: Icon(Icons.light_mode),
                   label: Text('Claro'),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'color_palettes.dart';
 
 /// Modos de tema disponibles.
-enum AppThemeMode { light, dark, custom }
+enum AppThemeMode { light, dark, system, custom }
 
 /// Estado del tema activo.
 class ThemeState {
@@ -12,7 +12,7 @@ class ThemeState {
   final int paletteIndex;
 
   const ThemeState({
-    this.mode = AppThemeMode.dark,
+    this.mode = AppThemeMode.system,  // por defecto sigue al sistema
     this.paletteIndex = 0,
   });
 
@@ -34,10 +34,21 @@ class AppTheme {
         return _lightTheme();
       case AppThemeMode.dark:
         return _darkTheme();
+      case AppThemeMode.system:
+        // El sistema decide — se maneja en MaterialApp con themeMode
+        return _lightTheme();
       case AppThemeMode.custom:
         final palette = kPalettes[state.paletteIndex.clamp(0, kPalettes.length - 1)];
         return _customTheme(palette);
     }
+  }
+
+  static ThemeData buildDarkTheme(ThemeState state) {
+    if (state.mode == AppThemeMode.custom) {
+      final palette = kPalettes[state.paletteIndex.clamp(0, kPalettes.length - 1)];
+      return _customTheme(palette).copyWith(brightness: Brightness.dark);
+    }
+    return _darkTheme();
   }
 
   static ThemeData _lightTheme() {

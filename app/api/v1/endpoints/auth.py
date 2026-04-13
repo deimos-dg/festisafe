@@ -342,18 +342,24 @@ def forgot_password(
 ):
     """
     Inicia el flujo de recuperación de contraseña.
-    Genera un token seguro, lo almacena (hash SHA-256) y lo envía por email.
-    Respuesta genérica para no revelar si el email existe.
+    - Con SMTP configurado: envía email y respuesta genérica.
+    - Sin SMTP (DEBUG=true): devuelve el token directamente para pruebas.
     """
     ip = _get_ip(request)
     try:
-        pwd_recovery_svc.request_password_recovery(db, data.email, ip)
+        token = pwd_recovery_svc.request_password_recovery(db, data.email, ip)
+        return {"message": "Si el email existe, recibirás instrucciones para recuperar tu contraseña."}
     except EmailDeliveryError:
+        from app.core.config import settings
+        if settings.DEBUG and token:
+            return {
+                "message": "SMTP no configurado. Usa este token para restablecer tu contraseña:",
+                "debug_token": token,
+            }
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No se pudo enviar el email de recuperación. Inténtalo más tarde.",
+            detail="No se pudo enviar el email de recuperación. Configura SMTP en Railway.",
         )
-    return {"message": "Si el email existe, recibirás instrucciones para recuperar tu contraseña."}
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)

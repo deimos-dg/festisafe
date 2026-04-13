@@ -12,10 +12,20 @@ class FestiSafeApp extends ConsumerWidget {
     final themeState = ref.watch(themeProvider);
     final router = ref.watch(routerProvider);
 
+    // Determinar ThemeMode según la preferencia del usuario
+    final themeMode = switch (themeState.mode) {
+      AppThemeMode.light  => ThemeMode.light,
+      AppThemeMode.dark   => ThemeMode.dark,
+      AppThemeMode.system => ThemeMode.system,  // sigue al dispositivo
+      AppThemeMode.custom => ThemeMode.light,   // custom usa tema claro base
+    };
+
     return MaterialApp.router(
       title: 'FestiSafe',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.buildTheme(themeState),
+      themeMode: themeMode,
+      theme: AppTheme.buildTheme(themeState.copyWith(mode: AppThemeMode.light)),
+      darkTheme: AppTheme.buildDarkTheme(themeState),
       routerConfig: router,
     );
   }

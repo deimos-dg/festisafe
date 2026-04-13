@@ -89,10 +89,11 @@ def _revoke_all_user_refresh_tokens(db: Session, user_id) -> None:
     pass
 
 
-def request_password_recovery(db: Session, email: str, ip: str) -> None:
+def request_password_recovery(db: Session, email: str, ip: str) -> Optional[str]:
     """
     Inicia el flujo de recuperación. Siempre responde igual (anti-enumeración).
-    Lanza EmailDeliveryError si el SMTP falla (el endpoint devuelve 503).
+    Retorna el token generado (para que el endpoint lo use si SMTP falla en DEBUG).
+    Lanza EmailDeliveryError si el SMTP falla.
     """
     user = get_user_by_email(db, email)
 
@@ -104,15 +105,12 @@ def request_password_recovery(db: Session, email: str, ip: str) -> None:
     )
 
     if not user or not user.is_active:
-        # Ejecutar operaciones dummy para tiempo constante
         _ = _hash_token(secrets.token_hex(32))
-        return
+        return None
 
-    # Invalidar tokens previos activos
     invalidate_user_tokens(db, user.id)
 
-    # Generar token criptográficamente seguro
-    token = generate_recovery_token()  # 32 bytes = 64 chars hex
+    token = generate_recovery_token()
     token_hash = _hash_token(token)
     expires_at = datetime.utcnow() + timedelta(minutes=TOKEN_EXPIRY_MINUTES)
 
@@ -124,6 +122,7 @@ def request_password_recovery(db: Session, email: str, ip: str) -> None:
         user_email=user.email,
         token=token,
     )
+    return token
 
 
 def reset_password(db: Session, token: str, new_password: str, ip: str) -> None:
