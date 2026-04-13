@@ -157,7 +157,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final initial = widget.initialPosition ?? const LatLng(40.4168, -3.7038);
+    final initial = widget.initialPosition ?? const LatLng(19.4326, -99.1332); // CDMX por defecto
 
     return Scaffold(
       appBar: AppBar(

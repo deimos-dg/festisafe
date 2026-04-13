@@ -31,38 +31,49 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Eventos'),
-        actions: [
-          // Toggle lista / cuadrícula
-          IconButton(
-            icon: Icon(_view == _ViewMode.list
-                ? Icons.grid_view_rounded
-                : Icons.view_list_rounded),
-            tooltip: _view == _ViewMode.list ? 'Vista cuadrícula' : 'Vista lista',
-            onPressed: () => setState(() => _view = _view == _ViewMode.list
-                ? _ViewMode.grid
-                : _ViewMode.list),
-          ),
-        ],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: SearchBar(
-              controller: _searchCtrl,
-              hintText: 'Buscar eventos...',
-              leading: const Icon(Icons.search),
-              trailing: [
-                if (_query.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      setState(() => _query = '');
-                    },
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SearchBar(
+                    controller: _searchCtrl,
+                    hintText: 'Buscar eventos...',
+                    leading: const Icon(Icons.search),
+                    trailing: [
+                      if (_query.isNotEmpty)
+                        IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _query = '');
+                          },
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _query = v),
                   ),
+                ),
+                const SizedBox(width: 8),
+                // Toggle lista / cuadrícula — esquina superior derecha
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(_view == _ViewMode.list
+                        ? Icons.grid_view_rounded
+                        : Icons.view_list_rounded),
+                    tooltip: _view == _ViewMode.list ? 'Vista cuadrícula' : 'Vista lista',
+                    onPressed: () => setState(() => _view = _view == _ViewMode.list
+                        ? _ViewMode.grid
+                        : _ViewMode.list),
+                  ),
+                ),
               ],
-              onChanged: (v) => setState(() => _query = v),
             ),
           ),
           Expanded(
