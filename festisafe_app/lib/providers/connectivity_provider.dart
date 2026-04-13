@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/constants.dart';
 
 /// Estado de conectividad de red.
 enum ConnectivityStatus { online, offline, unknown }
@@ -21,9 +22,10 @@ class ConnectivityNotifier extends StateNotifier<ConnectivityStatus> {
 
   Future<void> _check() async {
     try {
-      // Usar el health check del propio backend en lugar de google.com
-      // para evitar falsos negativos en redes que bloquean Google
-      final result = await InternetAddress.lookup('festisafe-production.up.railway.app')
+      // Usar el host del backend configurado en AppConstants para evitar
+      // hardcodear la URL y falsos negativos en redes que bloquean Google
+      final host = Uri.parse(AppConstants.apiBaseUrl).host;
+      final result = await InternetAddress.lookup(host)
           .timeout(const Duration(seconds: 3));
       final isOnline = result.isNotEmpty && result.first.rawAddress.isNotEmpty;
       if (mounted) {

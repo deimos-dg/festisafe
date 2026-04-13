@@ -10,6 +10,9 @@ class OfflineCacheService {
   static const _keyPendingSos = 'offline_pending_sos';
   static const _keyLastSync = 'offline_last_sync';
 
+  /// Tiempo máximo de validez del caché de ubicaciones (24 horas).
+  static const _cacheMaxAge = Duration(hours: 24);
+
   // ---------------------------------------------------------------------------
   // Ubicaciones del grupo
   // ---------------------------------------------------------------------------
@@ -30,9 +33,24 @@ class OfflineCacheService {
     await prefs.setString(_keyLastSync, DateTime.now().toIso8601String());
   }
 
-  /// Carga las últimas ubicaciones guardadas. Retorna mapa vacío si no hay.
+  /// Carga las últimas ubicaciones guardadas.
+  /// Retorna mapa vacío si no hay datos o si el caché tiene más de 24 horas.
   Future<Map<String, MemberLocation>> loadLocations() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Verificar expiración del caché
+    final rawSync = prefs.getString(_keyLastSync);
+    if (rawSync != null) {
+      final lastSync = DateTime.tryParse(rawSync);
+      if (lastSync != null &&
+          DateTime.now().difference(lastSync) > _cacheMaxAge) {
+        // Caché expirado — limpiar y retornar vacío
+        await prefs.remove(_keyLocations);
+        await prefs.remove(_keyLastSync);
+        return {};
+      }
+    }
+
     final raw = prefs.getString(_keyLocations);
     if (raw == null) return {};
     try {

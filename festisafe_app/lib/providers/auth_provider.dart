@@ -139,6 +139,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Limpia el estado de error para que la UI pueda reaccionar a nuevos intentos.
+  void clearError() {
+    if (state is AuthError) state = const AuthUnauthenticated();
+  }
+
   Future<void> logout() async {
     await NotificationService().unregisterTokenFromBackend();
     await _service.logout();
