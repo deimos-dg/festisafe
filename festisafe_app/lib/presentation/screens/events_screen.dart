@@ -21,14 +21,26 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
     super.dispose();
   }
 
+  Future<void> _refresh() async {
+    ref.invalidate(eventListProvider(_query.isEmpty ? null : _query));
+    ref.invalidate(myEventsProvider);
+    // Esperar a que ambos terminen
+    await Future.wait([
+      ref.read(eventListProvider(_query.isEmpty ? null : _query).future),
+      ref.read(myEventsProvider.future).catchError((_) => <EventModel>[]),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final events = ref.watch(eventListProvider(_query.isEmpty ? null : _query));
+    final eventsAsync = ref.watch(eventListProvider(_query.isEmpty ? null : _query));
+    // IDs de eventos en los que el usuario ya participa
+    final myIds = ref
+        .watch(myEventsProvider)
+        .whenOrNull(data: (list) => list.map((e) => e.id).toSet()) ?? {};
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Eventos'),
-      ),
+      appBar: AppBar(title: const Text('Eventos')),
       body: Column(
         children: [
           Padding(
@@ -51,7 +63,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
             ),
           ),
           Expanded(
-            child: events.when(
+            child: eventsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
                 child: Column(
@@ -62,25 +74,39 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
                     Text('Error: $e'),
                     const SizedBox(height: 12),
                     FilledButton(
-                      onPressed: () => ref.invalidate(eventListProvider(_query)),
+                      onPressed: _refresh,
                       child: const Text('Reintentar'),
                     ),
                   ],
                 ),
               ),
               data: (list) => list.isEmpty
-                  ? const Center(child: Text('No se encontraron eventos'))
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.85,
+                  ? Center(
+                      child: Text(
+                        _query.isEmpty
+                            ? 'No hay eventos activos por el momento'
+                            : 'Sin resultados para "$_query"',
+                        textAlign: TextAlign.center,
                       ),
-                      itemCount: list.length,
-                      itemBuilder: (_, i) => _EventGridCard(event: list[i]),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _refresh,
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.85,
+                        ),
+                        itemCount: list.length,
+                        itemBuilder: (_, i) => _EventGridCard(
+                          event: list[i],
+                          isEnrolled: myIds.contains(list[i].id),
+                        ),
+                      ),
                     ),
             ),
           ),
@@ -95,7 +121,8 @@ class _EventsScreenState extends ConsumerState<EventsScreen> {
 // ---------------------------------------------------------------------------
 class _EventGridCard extends StatelessWidget {
   final EventModel event;
-  const _EventGridCard({required this.event});
+  final bool isEnrolled;
+  const _EventGridCard({required this.event, required this.isEnrolled});
 
   @override
   Widget build(BuildContext context) {
@@ -109,17 +136,44 @@ class _EventGridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 72,
-              width: double.infinity,
-              color: color,
-              child: Center(
-                child: Icon(
-                  Icons.festival,
-                  size: 36,
-                  color: theme.colorScheme.onPrimaryContainer,
+            // Header
+            Stack(
+              children: [
+                Container(
+                  height: 72,
+                  width: double.infinity,
+                  color: color,
+                  child: Center(
+                    child: Icon(
+                      Icons.festival,
+                      size: 36,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
                 ),
-              ),
+                // Badge "Inscrito"
+                if (isEnrolled)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Inscrito',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Expanded(
               child: Padding(
