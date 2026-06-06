@@ -44,19 +44,20 @@ class NotificationService {
       if (token == null) return;
 
       final platform =
-      defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
+          defaultTargetPlatform == TargetPlatform.iOS ? 'ios' : 'android';
 
       await ApiClient().dio.post('/users/me/fcm-token', data: {
         'token': token,
         'platform': platform,
       });
 
+      // Escuchar renovaciones de token con manejo de errores
       _messaging.onTokenRefresh.listen((newToken) {
         ApiClient().dio.post('/users/me/fcm-token', data: {
           'token': newToken,
           'platform': platform,
         }).catchError((_) {});
-      });
+      }).onError((_) {});
     } catch (_) {}
   }
 

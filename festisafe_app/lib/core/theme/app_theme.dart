@@ -35,7 +35,9 @@ class AppTheme {
       case AppThemeMode.dark:
         return _darkTheme();
       case AppThemeMode.system:
-        // El sistema decide — se maneja en MaterialApp con themeMode
+        // En modo system, MaterialApp usa ThemeMode.system que alterna
+        // automáticamente entre theme y darkTheme según el dispositivo.
+        // buildTheme() se usa solo como tema base (light) en ese caso.
         return _lightTheme();
       case AppThemeMode.custom:
         final palette = kPalettes[state.paletteIndex.clamp(0, kPalettes.length - 1)];
@@ -46,7 +48,18 @@ class AppTheme {
   static ThemeData buildDarkTheme(ThemeState state) {
     if (state.mode == AppThemeMode.custom) {
       final palette = kPalettes[state.paletteIndex.clamp(0, kPalettes.length - 1)];
-      return _customTheme(palette).copyWith(brightness: Brightness.dark);
+      // Modo custom dark: usar la paleta como base con brightness oscura
+      return ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: palette.primary,
+          secondary: palette.secondary,
+          tertiary: palette.accent,
+          brightness: Brightness.dark,
+        ),
+        appBarTheme: const AppBarTheme(centerTitle: true),
+      );
     }
     return _darkTheme();
   }

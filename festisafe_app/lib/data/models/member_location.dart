@@ -11,6 +11,7 @@ class MemberLocation {
   final double longitude;
   final DateTime updatedAt;
   final int? avatarIndex;
+  final bool isVisible;
 
   const MemberLocation({
     required this.userId,
@@ -19,20 +20,28 @@ class MemberLocation {
     required this.longitude,
     required this.updatedAt,
     this.avatarIndex,
+    this.isVisible = true,
   });
 
   factory MemberLocation.fromWsMessage(Map<String, dynamic> payload) {
+    final userId = payload['user_id'] as String?;
+    final lat = (payload['latitude'] as num?)?.toDouble();
+    final lng = (payload['longitude'] as num?)?.toDouble();
+    if (userId == null || userId.isEmpty || lat == null || lng == null) {
+      throw ArgumentError('Campos requeridos faltantes en payload WS location');
+    }
     return MemberLocation(
-      userId: payload['user_id'] as String,
-      name: payload['name'] as String,
-      latitude: (payload['latitude'] as num).toDouble(),
-      longitude: (payload['longitude'] as num).toDouble(),
+      userId: userId,
+      name: payload['name'] as String? ?? 'Desconocido',
+      latitude: lat,
+      longitude: lng,
       updatedAt: DateTime.now(),
       avatarIndex: payload['avatar_index'] as int?,
+      isVisible: payload['is_visible'] as bool? ?? true,
     );
   }
 
-  MemberLocation copyWith({int? avatarIndex}) {
+  MemberLocation copyWith({int? avatarIndex, bool? isVisible}) {
     return MemberLocation(
       userId: userId,
       name: name,
@@ -40,6 +49,7 @@ class MemberLocation {
       longitude: longitude,
       updatedAt: updatedAt,
       avatarIndex: avatarIndex ?? this.avatarIndex,
+      isVisible: isVisible ?? this.isVisible,
     );
   }
 

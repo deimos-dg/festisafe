@@ -17,7 +17,7 @@ from app.db.models.user_location_history import UserLocationHistory
 
 router = APIRouter(tags=["WebSocket"])
 
-HEARTBEAT_INTERVAL = 30  # segundos entre pings del servidor
+HEARTBEAT_INTERVAL = 60  # segundos entre pings del servidor
 
 # Límite de conexiones WebSocket simultáneas por usuario
 _WS_MAX_CONNECTIONS_PER_USER = 3
@@ -139,7 +139,7 @@ async def ws_location(
 
         # 2. Esperar el mensaje de autenticación con timeout
         try:
-            raw_auth = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
+            raw_auth = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
             auth_data = json.loads(raw_auth)
         except (asyncio.TimeoutError, ValueError, TypeError):
             await websocket.send_json({"type": "error", "detail": "Se esperaba mensaje de autenticación"})

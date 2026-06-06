@@ -173,7 +173,9 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
           const SizedBox(height: 8),
           _InfoRow(
             icon: Icons.people_outlined,
-            text: 'Máx. ${event.maxParticipants} participantes',
+            text: event.participantCount != null
+                ? '${event.participantCount}/${event.maxParticipants} participantes'
+                : 'Máx. ${event.maxParticipants} participantes',
           ),
 
           if (event.hasMeetingPoint) ...[

@@ -39,12 +39,14 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
   /// Inicia el tracking GPS con frecuencia adaptativa según batería.
   Future<void> startTracking() async {
+    // Guard: si ya hay un stream activo, no duplicar
+    if (_trackingSub != null) return;
+
     final battery = _ref.read(batteryProvider).value ?? 100;
     final interval = battery < AppConstants.batteryLowThreshold
         ? AppConstants.locationIntervalLowBattery
         : AppConstants.locationIntervalNormal;
 
-    _trackingSub?.cancel();
     _trackingSub = _service.startTracking(intervalSeconds: interval).listen((pos) {
       state = state.copyWith(currentPosition: pos, isTracking: true);
     });
@@ -53,6 +55,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
   void stopTracking() {
     _trackingSub?.cancel();
+    _trackingSub = null;
     state = state.copyWith(isTracking: false);
   }
 

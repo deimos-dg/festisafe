@@ -188,7 +188,7 @@ def login(request: Request, response: Response, login_data: LoginRequest, db: Se
 
 
 @router.post("/refresh")
-@limiter.limit("20/minute")
+@limiter.limit("5/minute")
 def refresh(
     request: Request,
     response: Response,
@@ -270,7 +270,11 @@ def _generate_unique_code(db: Session) -> str:
 @limiter.limit("10/minute")
 def guest_login(request: Request, response: Response, data: GuestLoginRequest, db: Session = Depends(get_db)):
     ip = _get_ip(request)
-    guest_code = db.query(GuestCode).filter(GuestCode.code == data.code).first()
+
+    # Lock atómico para evitar race condition: dos requests simultáneos con el mismo código
+    guest_code = db.query(GuestCode).filter(
+        GuestCode.code == data.code
+    ).with_for_update().first()
 
     if not guest_code or not guest_code.is_valid():
         log_security_event(AuditEvent.GUEST_LOGIN, ip=ip, detail=f"Código inválido: {data.code}")

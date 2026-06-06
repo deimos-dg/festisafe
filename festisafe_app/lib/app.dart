@@ -16,7 +16,7 @@ class FestiSafeApp extends ConsumerWidget {
     final themeMode = switch (themeState.mode) {
       AppThemeMode.light  => ThemeMode.light,
       AppThemeMode.dark   => ThemeMode.dark,
-      AppThemeMode.system => ThemeMode.system,  // sigue al dispositivo
+      AppThemeMode.system => ThemeMode.system,
       AppThemeMode.custom => ThemeMode.light,   // custom usa tema claro base
     };
 
@@ -24,7 +24,9 @@ class FestiSafeApp extends ConsumerWidget {
       title: 'FestiSafe',
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      theme: AppTheme.buildTheme(themeState.copyWith(mode: AppThemeMode.light)),
+      // theme se usa para light y como base en system/custom
+      theme: AppTheme.buildTheme(themeState),
+      // darkTheme se usa cuando el dispositivo está en modo oscuro (system) o dark
       darkTheme: AppTheme.buildDarkTheme(themeState),
       routerConfig: router,
     );

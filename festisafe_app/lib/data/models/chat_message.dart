@@ -13,10 +13,16 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromWsMessage(Map<String, dynamic> payload) {
+    final userId = payload['user_id'] as String?;
+    final name = payload['name'] as String?;
+    final text = payload['text'] as String?;
+    if (userId == null || userId.isEmpty) {
+      throw ArgumentError('Campo user_id faltante en payload WS chat');
+    }
     return ChatMessage(
-      userId: payload['user_id'] as String,
-      name: payload['name'] as String,
-      text: payload['text'] as String,
+      userId: userId,
+      name: name ?? 'Desconocido',
+      text: text ?? '',
       timestamp: DateTime.now(),
     );
   }

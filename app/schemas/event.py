@@ -44,6 +44,7 @@ class EventResponse(BaseModel):
     is_active: bool
     organizer_id: Optional[UUID] = None
     max_participants: int
+    participant_count: Optional[int] = None   # cantidad actual de participantes activos
     created_at: datetime
     meeting_point_lat: Optional[float] = None
     meeting_point_lng: Optional[float] = None

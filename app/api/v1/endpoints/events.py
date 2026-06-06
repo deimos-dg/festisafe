@@ -30,6 +30,34 @@ def _get_event_or_404(db: Session, event_id: str) -> Event:
     return event
 
 
+def _enrich_event(event: Event, db: Session) -> dict:
+    """Construye un dict enriquecido con participant_count para EventResponse."""
+    count = db.query(EventParticipant).filter(
+        EventParticipant.event_id == event.id,
+        EventParticipant.is_active == True,
+    ).count()
+    data = {
+        "id": event.id,
+        "name": event.name,
+        "description": event.description,
+        "location_name": event.location_name,
+        "latitude": event.latitude,
+        "longitude": event.longitude,
+        "starts_at": event.starts_at,
+        "ends_at": event.ends_at,
+        "expires_at": event.expires_at,
+        "is_active": event.is_active,
+        "organizer_id": event.organizer_id,
+        "max_participants": event.max_participants,
+        "participant_count": count,
+        "created_at": event.created_at,
+        "meeting_point_lat": event.meeting_point_lat,
+        "meeting_point_lng": event.meeting_point_lng,
+        "meeting_point_name": event.meeting_point_name,
+    }
+    return data
+
+
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 def create_event(
     data: EventCreate,
@@ -74,7 +102,7 @@ def create_event(
         user_id=str(current_user.id),
         detail=f"event_id={event.id} name={event.name}",
     )
-    return event
+    return EventResponse(**_enrich_event(event, db))
 
 
 @router.patch("/{event_id}", response_model=EventResponse)
@@ -127,7 +155,7 @@ def update_event(
 
     db.commit()
     db.refresh(event)
-    return event
+    return EventResponse(**_enrich_event(event, db))
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_200_OK)
@@ -169,7 +197,7 @@ def activate_event(
     event.is_active = True
     db.commit()
     db.refresh(event)
-    return event
+    return EventResponse(**_enrich_event(event, db))
 
 
 @router.post("/{event_id}/deactivate", response_model=EventResponse)
@@ -186,7 +214,7 @@ def deactivate_event(
     event.close_event()
     db.commit()
     db.refresh(event)
-    return event
+    return EventResponse(**_enrich_event(event, db))
 
 
 @router.get("/my", response_model=List[EventResponse])
@@ -196,8 +224,7 @@ def list_my_events(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # JOIN directo — evita N+1 y aplica paginación correctamente
-    return (
+    events = (
         db.query(Event)
         .join(EventParticipant, EventParticipant.event_id == Event.id)
         .filter(
@@ -209,6 +236,7 @@ def list_my_events(
         .limit(limit)
         .all()
     )
+    return [EventResponse(**_enrich_event(e, db)) for e in events]
 
 
 @router.get("/search", response_model=List[EventResponse])
@@ -224,11 +252,11 @@ def search_events(
     if active_only:
         query = query.filter(Event.is_active == True, Event.expires_at > datetime.utcnow())
     if q:
-        # Sanitizar antes de usar en ilike para prevenir inyección de patrones LIKE
         safe_q = q.replace("%", r"\%").replace("_", r"\_")
         search = f"%{safe_q}%"
         query = query.filter(Event.name.ilike(search) | Event.location_name.ilike(search))
-    return query.order_by(Event.starts_at.asc()).offset(skip).limit(limit).all()
+    events = query.order_by(Event.starts_at.asc()).offset(skip).limit(limit).all()
+    return [EventResponse(**_enrich_event(e, db)) for e in events]
 
 
 @router.get("/public", response_model=List[EventResponse])
@@ -244,7 +272,8 @@ def search_events_public(
         safe_q = q.replace("%", r"\%").replace("_", r"\_")
         search = f"%{safe_q}%"
         query = query.filter(Event.name.ilike(search) | Event.location_name.ilike(search))
-    return query.order_by(Event.starts_at.asc()).offset(skip).limit(limit).all()
+    events = query.order_by(Event.starts_at.asc()).offset(skip).limit(limit).all()
+    return [EventResponse(**_enrich_event(e, db)) for e in events]
 
 
 @router.get("/organized", response_model=List[EventResponse])
@@ -254,9 +283,10 @@ def list_organized_events(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(["organizer", "admin"])),
 ):
-    return db.query(Event).filter(
+    events = db.query(Event).filter(
         Event.organizer_id == current_user.id
     ).offset(skip).limit(limit).all()
+    return [EventResponse(**_enrich_event(e, db)) for e in events]
 
 
 @router.get("/{event_id}", response_model=EventResponse)
@@ -265,7 +295,8 @@ def get_event(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return _get_event_or_404(db, event_id)
+    event = _get_event_or_404(db, event_id)
+    return EventResponse(**_enrich_event(event, db))
 
 
 @router.post("/{event_id}/join", status_code=status.HTTP_201_CREATED)

@@ -9,6 +9,7 @@ class EventModel {
   final DateTime startDate;
   final DateTime endDate;
   final int maxParticipants;
+  final int? participantCount;
   final bool isActive;
   final String? organizerId;
   final double? meetingPointLat;
@@ -25,6 +26,7 @@ class EventModel {
     required this.startDate,
     required this.endDate,
     required this.maxParticipants,
+    this.participantCount,
     required this.isActive,
     this.organizerId,
     this.meetingPointLat,
@@ -43,6 +45,7 @@ class EventModel {
       startDate: DateTime.parse(json['starts_at'] as String),
       endDate: DateTime.parse(json['ends_at'] as String),
       maxParticipants: json['max_participants'] as int? ?? 8,
+      participantCount: json['participant_count'] as int?,
       isActive: json['is_active'] as bool? ?? false,
       organizerId: json['organizer_id'] as String?,
       meetingPointLat: (json['meeting_point_lat'] as num?)?.toDouble(),
