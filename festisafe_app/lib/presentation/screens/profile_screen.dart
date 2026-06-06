@@ -485,7 +485,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 16),
 
             // Ajustes de tema
-            Text('Tema', style: Theme.of(context).textTheme.titleMedium),
+            Text('Apariencia', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
             SegmentedButton<AppThemeMode>(
               segments: const [
@@ -504,86 +504,100 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   icon: Icon(Icons.dark_mode),
                   label: Text('Oscuro'),
                 ),
-                ButtonSegment(
-                  value: AppThemeMode.custom,
-                  icon: Icon(Icons.palette),
-                  label: Text('Custom'),
-                ),
               ],
-              selected: {themeState.mode},
+              selected: {
+                themeState.mode == AppThemeMode.custom
+                    ? AppThemeMode.system
+                    : themeState.mode
+              },
               onSelectionChanged: (s) {
                 ref.read(themeProvider.notifier).setMode(s.first);
               },
             ),
+            const SizedBox(height: 20),
 
-            // Selector de paleta — solo visible en modo Custom
-            if (themeState.mode == AppThemeMode.custom) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Paleta de colores',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: List.generate(kPalettes.length, (i) {
-                  final palette = kPalettes[i];
-                  final isSelected = themeState.paletteIndex == i;
-                  return GestureDetector(
-                    onTap: () => ref.read(themeProvider.notifier).setPalette(i),
-                    child: Tooltip(
-                      message: palette.name,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [
-                              palette.primary,
-                              palette.secondary,
-                              palette.accent,
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          border: isSelected
-                              ? Border.all(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 3,
-                                )
-                              : Border.all(
-                                  color: Colors.transparent,
-                                  width: 3,
-                                ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: palette.primary.withValues(alpha: 0.5),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null,
+            // Paleta de colores — siempre visible
+            Row(
+              children: [
+                Text('Color de la app', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(width: 8),
+                if (themeState.mode == AppThemeMode.custom)
+                  Chip(
+                    label: Text(
+                      kPalettes[themeState.paletteIndex.clamp(0, kPalettes.length - 1)].name,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    avatar: CircleAvatar(
+                      backgroundColor: kPalettes[themeState.paletteIndex.clamp(0, kPalettes.length - 1)].primary,
+                      radius: 8,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: List.generate(kPalettes.length, (i) {
+                final palette = kPalettes[i];
+                final isSelected = themeState.mode == AppThemeMode.custom &&
+                    themeState.paletteIndex == i;
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(themeProvider.notifier).setPalette(i);
+                    ref.read(themeProvider.notifier).setMode(AppThemeMode.custom);
+                  },
+                  child: Tooltip(
+                    message: palette.name,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            palette.primary,
+                            palette.secondary,
+                            palette.accent,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        child: isSelected
-                            ? const Icon(Icons.check, color: Colors.white, size: 22)
+                        border: isSelected
+                            ? Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 3,
+                              )
+                            : Border.all(
+                                color: Colors.transparent,
+                                width: 3,
+                              ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: palette.primary.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                ),
+                              ]
                             : null,
                       ),
+                      child: isSelected
+                          ? const Icon(Icons.check, color: Colors.white, size: 22)
+                          : null,
                     ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                kPalettes[themeState.paletteIndex.clamp(0, kPalettes.length - 1)].name,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-            ],
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Toca un color para personalizar la app',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
 
             const SizedBox(height: 32),
             const Divider(),

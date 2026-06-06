@@ -15,6 +15,7 @@ class HomeScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final isGuest = authState is AuthGuest;
     final isOrganizer = authState is AuthAuthenticated && authState.user.isOrganizer;
+    final currentUserId = authState is AuthAuthenticated ? authState.user.id : null;
     final myEvents = ref.watch(myEventsProvider);
 
     return Scaffold(
@@ -79,7 +80,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               data: (events) => events.isEmpty
                   ? _EmptyState(onBrowse: () => context.push('/events'))
-                  : _EventList(events: events, isOrganizer: isOrganizer),
+                  : _EventList(events: events, isOrganizer: isOrganizer, currentUserId: currentUserId),
             ),
           ),
         ],
@@ -174,7 +175,8 @@ class _EmptyState extends StatelessWidget {
 class _EventList extends StatelessWidget {
   final List<EventModel> events;
   final bool isOrganizer;
-  const _EventList({required this.events, required this.isOrganizer});
+  final String? currentUserId;
+  const _EventList({required this.events, required this.isOrganizer, this.currentUserId});
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +185,8 @@ class _EventList extends StatelessWidget {
       itemCount: events.length,
       itemBuilder: (_, i) {
         final event = events[i];
+        // Solo el creador del evento ve el panel de organizador
+        final isOwner = isOrganizer && event.organizerId == currentUserId;
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
@@ -201,8 +205,8 @@ class _EventList extends StatelessWidget {
                     tooltip: 'Ver mapa',
                     onPressed: () => context.push('/map/${event.id}'),
                   ),
-                // Acceso rápido al dashboard para organizadores
-                if (isOrganizer)
+                // Solo el creador del evento accede al panel de organizador
+                if (isOwner)
                   IconButton(
                     icon: const Icon(Icons.dashboard_outlined),
                     tooltip: 'Panel organizador',
