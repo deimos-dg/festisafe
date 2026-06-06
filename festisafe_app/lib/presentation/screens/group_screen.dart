@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/group_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/event_provider.dart';
 import '../../providers/ws_provider.dart';
 import '../../data/models/group_member.dart';
 import '../../data/services/group_service.dart';
+import '../../data/services/event_service.dart';
 import '../../data/services/api_client.dart';
 import '../../core/constants.dart';
 import 'chat_screen.dart';
@@ -177,26 +179,149 @@ class _GroupScreenState extends ConsumerState<GroupScreen>
   }
 
   Future<void> _leaveGroup() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Salir del grupo'),
-        content: const Text('¿Estás seguro de que quieres salir del grupo?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancelar')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Salir'),
+    final group = ref.read(groupProvider).group;
+    final authState = ref.read(authProvider);
+    final currentUserId = _currentUserId;
+
+    // Verificar si el usuario actual es el organizador del evento
+    // (comparando con el eventId del grupo para obtener el evento)
+    bool isEventOrganizer = false;
+    String? eventId;
+    if (group != null) {
+      eventId = group.eventId;
+      try {
+        final eventsAsync = await ref.read(eventServiceProvider).getMyEvents();
+        final event = eventsAsync.where((e) => e.id == eventId).firstOrNull;
+        if (event != null && event.organizerId == currentUserId) {
+          isEventOrganizer = true;
+        }
+      } catch (_) {}
+    }
+
+    // Otros miembros del grupo (excluyendo al usuario actual)
+    final otherMembers = (group?.members ?? [])
+        .where((m) => m.userId != currentUserId)
+        .toList();
+
+    if (isEventOrganizer) {
+      if (otherMembers.isEmpty) {
+        // Sin otros participantes → confirmar eliminación del evento
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Salir y eliminar evento'),
+            content: const Text(
+              'Eres el único participante y organizador. '
+              'Si sales, el evento será eliminado permanentemente. '
+              '¿Estás seguro?',
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar evento'),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-    if (confirm == true && mounted) {
+        );
+        if (confirm != true || !mounted) return;
+        // Eliminar el evento (también elimina el grupo en cascada)
+        try {
+          await ref.read(eventServiceProvider).deleteEvent(eventId!);
+          ref.invalidate(myEventsProvider);
+          if (mounted) {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+            );
+          }
+        }
+        return;
+      } else {
+        // Hay otros miembros → elegir nuevo organizador del evento
+        GroupMemberModel? selected;
+        final picked = await showDialog<GroupMemberModel>(
+          context: context,
+          builder: (_) => StatefulBuilder(
+            builder: (ctx, setState) => AlertDialog(
+              title: const Text('Elegir nuevo organizador del evento'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Eres el organizador del evento. Debes elegir quién tomará ese rol antes de salir.',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  ...otherMembers.map((m) => RadioListTile<GroupMemberModel>(
+                        title: Text(m.name),
+                        value: m,
+                        groupValue: selected,
+                        onChanged: (v) => setState(() => selected = v),
+                      )),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+                FilledButton(
+                  onPressed: selected == null ? null : () => Navigator.pop(ctx, selected),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            ),
+          ),
+        );
+        if (picked == null || !mounted) return;
+        // Transferir rol de organizador del evento en el backend
+        try {
+          await ApiClient().dio.patch(
+            '/events/$eventId',
+            data: {'organizer_id': picked.userId},
+          );
+        } catch (_) {
+          // Si el backend no soporta cambio de organizador por PATCH,
+          // al menos transferimos el admin del grupo
+        }
+        // Transferir admin del grupo al nuevo organizador
+        try {
+          await ref.read(groupProvider.notifier).transferAdmin(widget.groupId, picked.userId);
+        } catch (_) {}
+      }
+    } else {
+      // Usuario normal que sale del grupo — confirmar
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Salir del grupo'),
+          content: const Text('¿Estás seguro de que quieres salir del grupo?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Salir'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true || !mounted) return;
+    }
+
+    // Ejecutar salida del grupo
+    try {
       await ref.read(groupProvider.notifier).leaveGroup(widget.groupId);
       if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

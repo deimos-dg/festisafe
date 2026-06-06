@@ -95,8 +95,18 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
       final service = ref.read(eventServiceProvider);
       final events = await service.getMyEvents();
       final event = events.where((e) => e.id == widget.eventId).firstOrNull;
-      if (event != null && event.hasMeetingPoint && mounted) {
+      if (event != null && mounted) {
         setState(() => _meetingPoint = event);
+        // Si no hay GPS aún, centrar el mapa en las coordenadas del evento
+        if (event.latitude != null && event.longitude != null) {
+          final myPos = ref.read(locationProvider).currentPosition;
+          if (myPos == null) {
+            _mapController.move(
+              LatLng(event.latitude!, event.longitude!),
+              15,
+            );
+          }
+        }
       }
     } catch (_) {}
   }
@@ -302,7 +312,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
 
     final currentUserId = authState is AuthAuthenticated ? authState.user.id : (authState is AuthGuest ? authState.user.id : null);
     final myPos = locationState.currentPosition;
-    final center = myPos != null ? LatLng(myPos.latitude, myPos.longitude) : const LatLng(0, 0);
+    // Fallback: coordenadas del evento si no hay GPS aún
+    final eventCoords = _meetingPoint != null && _meetingPoint!.latitude != null
+        ? LatLng(_meetingPoint!.latitude!, _meetingPoint!.longitude!)
+        : null;
+    final center = myPos != null
+        ? LatLng(myPos.latitude, myPos.longitude)
+        : eventCoords ?? const LatLng(19.4326, -99.1332);
 
     return Scaffold(
       backgroundColor: const Color(0xFF030712), // Dark Global Background
