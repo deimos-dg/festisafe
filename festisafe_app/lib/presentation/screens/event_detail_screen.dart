@@ -118,6 +118,7 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
     try {
       await ref.read(eventServiceProvider).joinEvent(widget.event.id);
       ref.invalidate(myEventsProvider);
+      ref.invalidate(participatingEventIdsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Te uniste al evento')),
@@ -127,6 +128,7 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
       if (!mounted) return;
       String msg = 'No se pudo unir al evento';
       if (e.toString().contains('403')) msg = 'Evento lleno o inactivo';
+      if (e.toString().contains('400')) msg = 'Ya estás inscrito en este evento';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg), backgroundColor: Colors.red),
       );

@@ -71,7 +71,7 @@ class _SosButtonState extends ConsumerState<SosButton>
     try {
       if (sosState.isSosActive) {
         await service.deactivate(widget.eventId);
-        ref.read(sosProvider.notifier).setSosActive(false);
+        if (mounted) ref.read(sosProvider.notifier).setSosActive(false);
       } else {
         final pos = locationState.currentPosition;
         await service.activate(
@@ -79,7 +79,7 @@ class _SosButtonState extends ConsumerState<SosButton>
           position: pos,
           batteryLevel: battery,
         );
-        ref.read(sosProvider.notifier).setSosActive(true);
+        if (mounted) ref.read(sosProvider.notifier).setSosActive(true);
       }
     } catch (e) {
       if (mounted) {
