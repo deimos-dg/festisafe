@@ -223,12 +223,14 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
   }
 
   void _checkFallback() {
+    if (!mounted) return;
     if (ref.read(wsProvider) != WsConnectionState.connected) _startFallback();
   }
 
   void _startFallback() {
     _fallbackTimer?.cancel();
     _fallbackTimer = Timer.periodic(Duration(seconds: AppConstants.locationFallbackInterval), (_) async {
+        if (!mounted) return;
         final pos = ref.read(locationProvider).currentPosition;
         if (pos != null) {
           try { await LocationService().sendFallbackLocation(widget.eventId, pos); } catch (_) {}
