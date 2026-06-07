@@ -75,34 +75,56 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     // HEADER
                     Column(
                       children: [
+                        // Logo con glow neón estilo festival
                         Container(
+                          width: 140,
+                          height: 140,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
+                            borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.purple.withOpacity(0.4),
+                                color: const Color(0xFF6C63FF).withValues(alpha: 0.5),
                                 blurRadius: 40,
+                                spreadRadius: 5,
+                              ),
+                              BoxShadow(
+                                color: const Color(0xFFE91E8C).withValues(alpha: 0.3),
+                                blurRadius: 60,
+                                spreadRadius: 2,
                               ),
                             ],
                           ),
-                          child: Image.asset(
-                            'assets/images/rave_logo.png',
-                            width: 120,
-                            height: 120,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.asset(
+                              'assets/images/app_icon.png',
+                              width: 140,
+                              height: 140,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'FestiSafe',
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: 24),
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFF6C63FF), Color(0xFF40C4FF)],
+                          ).createShader(bounds),
+                          child: Text(
+                            'FestiSafe',
+                            style: theme.textTheme.headlineLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Text(
                           'Seguridad inteligente en festivales',
-                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white60),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.white60,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ],
                     ),
