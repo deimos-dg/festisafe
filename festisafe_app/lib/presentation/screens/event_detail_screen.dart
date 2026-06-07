@@ -254,17 +254,20 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
                 icon: const Icon(Icons.group_outlined),
                 label: const Text('Crear grupo'),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                onPressed: _leaveEvent,
-                icon: const Icon(Icons.exit_to_app),
-                label: const Text('Salir del evento'),
-              ),
+              // Solo mostrar "Salir del evento" si NO eres el organizador
+              if (event.organizerId != (authState is AuthAuthenticated ? authState.user.id : null)) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                  onPressed: _leaveEvent,
+                  icon: const Icon(Icons.exit_to_app),
+                  label: const Text('Salir del evento'),
+                ),
+              ],
             ],
           ],
 
-          if (isOrganizer) ...[
+          if (isOrganizer && event.organizerId == (authState is AuthAuthenticated ? authState.user.id : null)) ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => context.push('/organizer/${event.id}'),
