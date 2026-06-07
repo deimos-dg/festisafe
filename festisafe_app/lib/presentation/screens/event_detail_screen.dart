@@ -94,9 +94,13 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
       context.go('/home');
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().contains('404')
+          ? 'Ya no eres participante de este evento'
+          : 'Error al salir del evento';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
       );
+      ref.invalidate(myEventsProvider);
     }
   }
 
