@@ -5,7 +5,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/battery_provider.dart';
 import '../../data/services/sos_service.dart';
 
-/// Botón SOS con hold de 2 segundos y progreso circular.
+/// Botón SOS con un solo tap + confirmación.
 class SosButton extends ConsumerStatefulWidget {
   final String eventId;
   const SosButton({super.key, required this.eventId});
@@ -14,58 +14,59 @@ class SosButton extends ConsumerStatefulWidget {
   ConsumerState<SosButton> createState() => _SosButtonState();
 }
 
-class _SosButtonState extends ConsumerState<SosButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _progressCtrl;
-  bool _holding = false;
+class _SosButtonState extends ConsumerState<SosButton> {
   bool _loading = false;
 
-  static const _holdDuration = Duration(seconds: 2);
-
-  @override
-  void initState() {
-    super.initState();
-    _progressCtrl = AnimationController(vsync: this, duration: _holdDuration);
-    _progressCtrl.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        _triggerSos();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _progressCtrl.dispose();
-    super.dispose();
-  }
-
-  void _onTapDown(TapDownDetails _) {
+  Future<void> _onTap() async {
     if (_loading) return;
-    setState(() => _holding = true);
-    _progressCtrl.forward(from: 0);
+
+    final sosState = ref.read(sosProvider);
+
+    if (sosState.isSosActive) {
+      // Desactivar SOS — confirmar
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Cancelar SOS'),
+          content: const Text('¿Estás seguro de que ya estás bien?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sí, estoy bien')),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    } else {
+      // Activar SOS — confirmar
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('🆘 Activar SOS'),
+          content: const Text(
+            'Se enviará una alerta a tu grupo y a los organizadores con tu ubicación actual.\n\n¿Necesitas ayuda?',
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sí, necesito ayuda'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    }
+
+    await _executeSos();
   }
 
-  void _onTapUp(TapUpDetails _) => _cancelHold();
-  void _onTapCancel() => _cancelHold();
-
-  void _cancelHold() {
-    if (!_holding) return;
-    setState(() => _holding = false);
-    _progressCtrl.stop();
-    _progressCtrl.reset();
-  }
-
-  Future<void> _triggerSos() async {
-    setState(() {
-      _holding = false;
-      _loading = true;
-    });
-    _progressCtrl.reset();
+  Future<void> _executeSos() async {
+    setState(() => _loading = true);
 
     final sosState = ref.read(sosProvider);
     final locationState = ref.read(locationProvider);
     final battery = ref.read(batteryProvider).value ?? 100;
-
     final service = SosService();
 
     try {
@@ -85,7 +86,7 @@ class _SosButtonState extends ConsumerState<SosButton>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al ${sosState.isSosActive ? 'cancelar' : 'activar'} SOS: $e'),
+            content: Text('Error: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -101,68 +102,50 @@ class _SosButtonState extends ConsumerState<SosButton>
     final isActive = sosState.isSosActive;
 
     return GestureDetector(
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
-      child: AnimatedBuilder(
-        animation: _progressCtrl,
-        builder: (_, __) {
-          return SizedBox(
-            width: 72,
-            height: 72,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Progreso circular durante el hold
-                if (_holding)
-                  CircularProgressIndicator(
-                    value: _progressCtrl.value,
-                    strokeWidth: 4,
-                    color: Colors.red,
-                  ),
-                // Botón principal
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isActive ? Colors.red : Colors.red.shade700,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.red.withValues(alpha: 0.4),
-                        blurRadius: isActive ? 16 : 8,
-                        spreadRadius: isActive ? 4 : 0,
-                      ),
-                    ],
-                  ),
-                  child: _loading
-                      ? const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.sos, color: Colors.white, size: 24),
-                            if (isActive)
-                              const Text(
-                                'ACTIVO',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                          ],
-                        ),
+      onTap: _onTap,
+      child: SizedBox(
+        width: 72,
+        height: 72,
+        child: Center(
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive ? Colors.red : Colors.red.shade700,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.withValues(alpha: 0.4),
+                  blurRadius: isActive ? 16 : 8,
+                  spreadRadius: isActive ? 4 : 0,
                 ),
               ],
             ),
-          );
-        },
+            child: _loading
+                ? const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.sos, color: Colors.white, size: 24),
+                      if (isActive)
+                        const Text(
+                          'ACTIVO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ),
       ),
     );
   }
