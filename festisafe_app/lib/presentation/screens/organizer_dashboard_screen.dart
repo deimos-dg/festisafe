@@ -48,6 +48,7 @@ class _OrganizerDashboardScreenState
   }
 
   void _onWsMessage(WsMessage msg) {
+    if (!mounted) return;
     switch (msg.type) {
       case WsMessageType.sos:
         final alert = SosAlert.fromWsMessage(msg.payload);
@@ -74,8 +75,11 @@ class _OrganizerDashboardScreenState
   Future<void> _loadActiveSos() async {
     try {
       final alerts = await SosService().getActiveSos(widget.eventId);
-      if (mounted) ref.read(sosProvider.notifier).setActiveAlerts(alerts);
-    } catch (_) {}
+      if (!mounted) return;
+      ref.read(sosProvider.notifier).setActiveAlerts(alerts);
+    } catch (_) {
+      // Ignorar errores si el widget fue destruido durante la request
+    }
   }
 
   Future<void> _toggleEvent(bool isActive) async {
