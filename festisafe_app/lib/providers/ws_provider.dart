@@ -7,7 +7,9 @@ class WsNotifier extends StateNotifier<WsConnectionState> {
   final WsClient _client;
 
   WsNotifier(this._client) : super(WsConnectionState.disconnected) {
-    _client.stateStream.listen((s) => state = s);
+    _client.stateStream.listen((s) {
+      if (mounted) state = s;
+    });
   }
 
   Future<void> connect(String eventId, String token) async {
