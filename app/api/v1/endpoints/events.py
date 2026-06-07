@@ -324,7 +324,7 @@ def join_event(
         current_count = db.query(EventParticipant).filter(
             EventParticipant.event_id == event.id,
             EventParticipant.is_active == True,
-        ).with_for_update().count()
+        ).count()
         if current_count >= event.max_participants:
             raise HTTPException(status_code=403, detail="El evento está lleno")
         existing.is_active = True
@@ -336,13 +336,17 @@ def join_event(
     current_count = db.query(EventParticipant).filter(
         EventParticipant.event_id == event.id,
         EventParticipant.is_active == True,
-    ).with_for_update().count()
+    ).count()
     if current_count >= event.max_participants:
         raise HTTPException(status_code=403, detail="El evento está lleno")
 
-    participant = EventParticipant(event_id=event.id, user_id=current_user.id)
-    db.add(participant)
-    db.commit()
+    try:
+        participant = EventParticipant(event_id=event.id, user_id=current_user.id)
+        db.add(participant)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Ya estás inscrito en este evento")
     return {"message": "Te uniste al evento correctamente"}
 
 
