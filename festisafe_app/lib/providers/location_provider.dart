@@ -103,6 +103,18 @@ class MemberLocationsNotifier extends StateNotifier<Map<String, MemberLocation>>
     _cache.saveLocations(state);
   }
 
+  /// Limpia el caché expirado y recarga. Llamar al reconectar la app.
+  Future<void> invalidateIfStale() async {
+    final lastSync = await _cache.lastSyncTime();
+    if (lastSync == null) return;
+    final age = DateTime.now().difference(lastSync);
+    if (age > const Duration(hours: 1)) {
+      // Caché de más de 1h — limpiar para mostrar datos frescos al reconectar
+      await _cache.clearAll();
+      if (mounted) state = {};
+    }
+  }
+
   void clear() {
     state = {};
     _cache.saveLocations({});

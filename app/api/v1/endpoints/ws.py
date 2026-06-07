@@ -15,9 +15,17 @@ from app.db.models.group_member import GroupMember
 from app.db.models.user_last_location import UserLastLocation
 from app.db.models.user_location_history import UserLocationHistory
 
+from app.core.config import settings
+
 router = APIRouter(tags=["WebSocket"])
 
 HEARTBEAT_INTERVAL = 60  # segundos entre pings del servidor
+
+# Orígenes permitidos para conexiones WebSocket
+_ALLOWED_WS_ORIGINS = {
+    "https://festisafe-production.up.railway.app",
+    "wss://festisafe-production.up.railway.app",
+}
 
 # Límite de conexiones WebSocket simultáneas por usuario
 _WS_MAX_CONNECTIONS_PER_USER = 3
@@ -134,6 +142,12 @@ async def ws_location(
     """
     db = _get_db()
     try:
+        # 0. Validar Origin header para prevenir CSRF en WebSocket
+        origin = websocket.headers.get("origin", "")
+        if origin and origin not in _ALLOWED_WS_ORIGINS:
+            await websocket.close(code=4003, reason="Origen no permitido")
+            return
+
         # 1. Aceptar la conexión para poder recibir el primer mensaje de auth
         await websocket.accept()
 

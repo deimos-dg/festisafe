@@ -85,7 +85,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     _loadInitialLocations();
     _syncSosState();
     _syncPendingSos();
-    _loadEventData(); // cargar punto de encuentro
+    _loadEventData();
+    // Invalidar caché stale antes de cargar datos frescos
+    ref.read(memberLocationsProvider.notifier).invalidateIfStale();
+    // Recargar ubicaciones al recuperar conexión
+    ref.read(connectivityProvider.notifier).addReconnectListener(_onReconnected);
     Future.delayed(const Duration(seconds: 5), _checkFallback);
   }
 
@@ -298,7 +302,16 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     _stopBle();
     ref.read(locationProvider.notifier).stopTracking();
     ref.read(wsProvider.notifier).disconnect();
+    ref.read(connectivityProvider.notifier).removeReconnectListener(_onReconnected);
     super.dispose();
+  }
+
+  void _onReconnected() {
+    if (!mounted) return;
+    // Invalidar caché y recargar ubicaciones frescas al reconectar
+    ref.read(memberLocationsProvider.notifier).invalidateIfStale();
+    _loadInitialLocations();
+    _syncSosState();
   }
 
   @override

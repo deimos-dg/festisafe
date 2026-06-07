@@ -212,13 +212,22 @@ class _EventGridCard extends StatelessWidget {
                       children: [
                         _StatusChip(isActive: event.isActive),
                         const Spacer(),
-                        Text(
-                          _fmt(event.startDate),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 10,
-                            color: Colors.grey,
+                        if (event.participantCount != null)
+                          Text(
+                            '${event.participantCount}/${event.maxParticipants}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
+                          )
+                        else
+                          Text(
+                            _fmt(event.startDate),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontSize: 10,
+                              color: Colors.grey,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],

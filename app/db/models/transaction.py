@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import Column, String, Float, DateTime, Enum, Integer, ForeignKey
+from sqlalchemy import Column, String, Float, DateTime, Enum, Integer, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.base import Base
@@ -42,3 +42,7 @@ class Transaction(Base):
 
     company = relationship("Company")
     user = relationship("User")
+
+    __table_args__ = (
+        CheckConstraint('amount > 0', name='ck_transaction_amount_positive'),
+    )

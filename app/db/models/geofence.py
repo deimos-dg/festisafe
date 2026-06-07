@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Enum, JSON, Boolean
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Enum, JSON, Boolean, event as sa_event
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import enum
@@ -34,3 +34,28 @@ class Geofence(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     company = relationship("Company")
+
+    def validate_polygon(self) -> bool:
+        """Valida que el polígono tenga al menos 3 puntos y coordenadas válidas."""
+        if self.polygon_points is None:
+            return True  # Geofence circular — no aplica
+        if not isinstance(self.polygon_points, list):
+            return False
+        if len(self.polygon_points) < 3:
+            return False
+        for point in self.polygon_points:
+            if not isinstance(point, (list, tuple)) or len(point) != 2:
+                return False
+            lat, lng = point
+            if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+                return False
+        return True
+
+
+@sa_event.listens_for(Geofence, "before_insert")
+@sa_event.listens_for(Geofence, "before_update")
+def validate_geofence(mapper, connection, target):
+    if not target.validate_polygon():
+        raise ValueError(
+            "polygon_points inválido: debe tener al menos 3 puntos con coordenadas válidas"
+        )
