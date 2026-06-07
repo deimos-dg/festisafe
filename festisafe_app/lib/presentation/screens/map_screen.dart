@@ -162,6 +162,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
       case WsMessageType.sosCancelled:
         final userId = msg.payload['user_id'] as String;
         ref.read(sosProvider.notifier).onSosCancelled(userId);
+      case WsMessageType.message:
+        try {
+          final chatMsg = ChatMessage.fromWsMessage(msg.payload);
+          ref.read(chatProvider.notifier).addMessage(chatMsg);
+        } catch (_) {}
       case WsMessageType.reaction:
         setState(() { 
           _currentReaction = msg.payload['reaction']; 
