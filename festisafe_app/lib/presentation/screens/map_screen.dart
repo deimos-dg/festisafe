@@ -290,9 +290,11 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
   }
 
   void _stopBle() {
-    if (ref.read(bleProvider).isActive) {
-      ref.read(bleProvider.notifier).stop();
-    }
+    try {
+      if (ref.read(bleProvider).isActive) {
+        ref.read(bleProvider.notifier).stop();
+      }
+    } catch (_) {}
   }
 
   @override
@@ -302,10 +304,9 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     _wsStateSub?.cancel();
     _fallbackTimer?.cancel();
     _bleActivationTimer?.cancel();
-    _stopBle();
-    ref.read(locationProvider.notifier).stopTracking();
-    ref.read(wsProvider.notifier).disconnect();
-    ref.read(connectivityProvider.notifier).removeReconnectListener(_onReconnected);
+    // No usar ref.read() en dispose — los providers se limpian solos
+    try { _stopBle(); } catch (_) {}
+    try { ref.read(connectivityProvider.notifier).removeReconnectListener(_onReconnected); } catch (_) {}
     super.dispose();
   }
 
