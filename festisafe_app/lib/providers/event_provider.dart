@@ -11,7 +11,6 @@ final eventListProvider = FutureProvider.family<List<EventModel>, String?>(
 /// Combina eventos en los que el usuario participa + eventos que organiza,
 /// eliminando duplicados. Así el organizador siempre ve sus propios eventos.
 final myEventsProvider = FutureProvider<List<EventModel>>((ref) async {
-  // watch en lugar de read para reaccionar a invalidaciones
   final service = ref.watch(eventServiceProvider);
   final results = await Future.wait([
     service.getMyEvents(),
@@ -26,6 +25,13 @@ final myEventsProvider = FutureProvider<List<EventModel>>((ref) async {
     if (seen.add(e.id)) merged.add(e);
   }
   return merged;
+});
+
+/// IDs de eventos donde el usuario es participante activo (no solo organizador).
+final participatingEventIdsProvider = FutureProvider<Set<String>>((ref) async {
+  final service = ref.watch(eventServiceProvider);
+  final joined = await service.getMyEvents();
+  return joined.map((e) => e.id).toSet();
 });
 
 final organizedEventsProvider = FutureProvider<List<EventModel>>(

@@ -13,6 +13,8 @@ class EventDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final myEventsAsync = ref.watch(myEventsProvider);
+    final participatingIds = ref.watch(participatingEventIdsProvider)
+        .whenOrNull(data: (ids) => ids) ?? <String>{};
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle del evento')),
@@ -20,7 +22,7 @@ class EventDetailScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (myEvents) {
-          final isParticipant = myEvents.any((e) => e.id == eventId);
+          final isParticipant = participatingIds.contains(eventId);
           final event = myEvents.where((e) => e.id == eventId).firstOrNull;
           if (event == null) {
             return _EventDetailLoader(eventId: eventId, isParticipant: false);
@@ -87,6 +89,7 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
     try {
       await ref.read(eventServiceProvider).leaveEvent(widget.event.id);
       ref.invalidate(myEventsProvider);
+      ref.invalidate(participatingEventIdsProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Saliste del evento')),
@@ -95,6 +98,7 @@ class _EventDetailBodyState extends ConsumerState<_EventDetailBody> {
     } catch (e) {
       if (!mounted) return;
       ref.invalidate(myEventsProvider);
+      ref.invalidate(participatingEventIdsProvider);
       if (e.toString().contains('404')) {
         // Ya no eres participante — redirigir a home
         ScaffoldMessenger.of(context).showSnackBar(
