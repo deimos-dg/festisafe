@@ -36,22 +36,21 @@ class _CreateEventFormState extends ConsumerState<CreateEventForm> {
 
   final _nominatimDio = Dio(BaseOptions(
     baseUrl: 'https://nominatim.openstreetmap.org',
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 15),
     headers: {
-      'User-Agent': 'FestiSafe/1.0 (festisafe@example.com)',
-      'Accept-Language': 'es',
+      'User-Agent': 'FestiSafe-App/2.1 (Android; contact: ogichidiaz@gmail.com)',
+      'Accept-Language': 'es,en',
     },
   ));
 
   void _onAddressChanged(String query) {
-    // Si ya tenemos coords de esa dirección, no re-geocodificar
     _geoDebounce?.cancel();
-    if (query.trim().length < 4) {
+    if (query.trim().length < 3) {
       setState(() => _geoSuggestions = []);
       return;
     }
-    _geoDebounce = Timer(const Duration(milliseconds: 600), () => _geocode(query));
+    _geoDebounce = Timer(const Duration(milliseconds: 800), () => _geocode(query.trim()));
   }
 
   Future<void> _geocode(String query) async {
@@ -61,7 +60,7 @@ class _CreateEventFormState extends ConsumerState<CreateEventForm> {
       final res = await _nominatimDio.get('/search', queryParameters: {
         'q': query,
         'format': 'json',
-        'limit': 4,
+        'limit': 5,
         'addressdetails': 1,
       });
       final list = (res.data as List<dynamic>).cast<Map<String, dynamic>>();
@@ -75,7 +74,8 @@ class _CreateEventFormState extends ConsumerState<CreateEventForm> {
           )).toList();
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Geocode error: $e');
     } finally {
       if (mounted) setState(() => _geocoding = false);
     }
@@ -150,6 +150,7 @@ class _CreateEventFormState extends ConsumerState<CreateEventForm> {
         'ends_at': _endDate.toIso8601String(),
       });
       ref.invalidate(myEventsProvider);
+      ref.invalidate(participatingEventIdsProvider);
       widget.onCreated?.call();
     } catch (e) {
       if (mounted) {
