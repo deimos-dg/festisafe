@@ -26,11 +26,12 @@ class SosNotifier extends StateNotifier<SosState> {
   SosNotifier() : super(const SosState());
 
   void setSosActive(bool active) {
+    if (!mounted) return;
     state = state.copyWith(isSosActive: active);
   }
 
-  /// Procesa un mensaje WS de tipo "sos".
   void onSosReceived(SosAlert alert) {
+    if (!mounted) return;
     final updated = [...state.activeAlerts];
     final idx = updated.indexWhere((a) => a.userId == alert.userId);
     if (idx >= 0) {
@@ -41,15 +42,15 @@ class SosNotifier extends StateNotifier<SosState> {
     state = state.copyWith(activeAlerts: updated);
   }
 
-  /// Procesa un mensaje WS de tipo "sos_cancelled".
   void onSosCancelled(String userId) {
+    if (!mounted) return;
     state = state.copyWith(
       activeAlerts: state.activeAlerts.where((a) => a.userId != userId).toList(),
     );
   }
 
-  /// Procesa un mensaje WS de tipo "sos_escalated".
   void onSosEscalated(String userId) {
+    if (!mounted) return;
     final updated = state.activeAlerts.map((a) {
       return a.userId == userId ? a.copyWith(isEscalated: true) : a;
     }).toList();
@@ -57,6 +58,7 @@ class SosNotifier extends StateNotifier<SosState> {
   }
 
   void setActiveAlerts(List<SosAlert> alerts) {
+    if (!mounted) return;
     state = state.copyWith(activeAlerts: alerts);
   }
 }

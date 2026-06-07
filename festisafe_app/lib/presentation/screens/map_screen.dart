@@ -139,6 +139,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
   Future<void> _syncSosState() async {
     try {
       final alerts = await SosService().getActiveSos(widget.eventId);
+      if (!mounted) return;
       final authState = ref.read(authProvider);
       final myId = authState is AuthAuthenticated ? authState.user.id : (authState is AuthGuest ? authState.user.id : null);
       if (myId != null) {
@@ -150,6 +151,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
   }
 
   void _onWsMessage(WsMessage msg) {
+    if (!mounted) return;
     switch (msg.type) {
       case WsMessageType.location:
         final loc = MemberLocation.fromWsMessage(msg.payload);
