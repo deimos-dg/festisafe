@@ -49,19 +49,19 @@ class LocationNotifier extends StateNotifier<LocationState> {
         : AppConstants.locationIntervalNormal;
 
     _trackingSub = _service.startTracking(intervalSeconds: interval).listen((pos) {
-      state = state.copyWith(currentPosition: pos, isTracking: true);
+      if (mounted) state = state.copyWith(currentPosition: pos, isTracking: true);
     });
-    state = state.copyWith(isTracking: true);
+    if (mounted) state = state.copyWith(isTracking: true);
   }
 
   void stopTracking() {
     _trackingSub?.cancel();
     _trackingSub = null;
-    state = state.copyWith(isTracking: false);
+    if (mounted) state = state.copyWith(isTracking: false);
   }
 
   void setVisibility(bool visible) {
-    state = state.copyWith(isVisible: visible);
+    if (mounted) state = state.copyWith(isVisible: visible);
   }
 
   @override
