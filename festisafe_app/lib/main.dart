@@ -49,7 +49,7 @@ Future<void> _initLocalNotifications() async {
   const initializationSettings = InitializationSettings(android: androidSettings);
 
   await flutterLocalNotificationsPlugin.initialize(
-    initializationSettings,
+    settings: initializationSettings,
     onDidReceiveNotificationResponse: _onNotificationTap,
   );
 }

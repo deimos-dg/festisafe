@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart' show Color;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -51,13 +50,12 @@ class NotificationService {
         'platform': platform,
       });
 
-      // Escuchar renovaciones de token con manejo de errores
       _messaging.onTokenRefresh.listen((newToken) {
         ApiClient().dio.post('/users/me/fcm-token', data: {
           'token': newToken,
           'platform': platform,
-        }).catchError((_) {});
-      }).onError((_) {});
+        }).ignore();
+      });
     } catch (_) {}
   }
 
@@ -65,7 +63,6 @@ class NotificationService {
     try {
       final token = await _messaging.getToken();
       if (token == null) return;
-
       await ApiClient().dio.delete(
         '/users/me/fcm-token',
         data: {'token': token, 'platform': 'android'},
@@ -81,10 +78,10 @@ class NotificationService {
     String? groupId,
   }) async {
     await flutterLocalNotificationsPlugin.show(
-      _sosId(userName),
-      '🆘 Alerta SOS',
-      '$userName necesita ayuda',
-      NotificationDetails(
+      id: _sosId(userName),
+      title: '🆘 Alerta SOS',
+      body: '$userName necesita ayuda',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           kSosChannelId,
           kSosChannelName,
@@ -104,10 +101,10 @@ class NotificationService {
 
   Future<void> showSosCancelled(String userName) async {
     await flutterLocalNotificationsPlugin.show(
-      _sosId(userName),
-      '✅ SOS cancelado',
-      '$userName ya está bien',
-      const NotificationDetails(
+      id: _sosId(userName),
+      title: '✅ SOS cancelado',
+      body: '$userName ya está bien',
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           kSosChannelId,
           kSosChannelName,
@@ -125,10 +122,10 @@ class NotificationService {
     required String eventId,
   }) async {
     await flutterLocalNotificationsPlugin.show(
-      42,
-      senderName,
-      text,
-      NotificationDetails(
+      id: 42,
+      title: senderName,
+      body: text,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           'festisafe_chat',
           'Mensajes del grupo',
@@ -143,23 +140,16 @@ class NotificationService {
 
   // ================= FCM =================
 
-  void _onForegroundMessage(RemoteMessage message) {
-    _handleMessage(message);
-  }
-
-  void _onNotificationOpenedApp(RemoteMessage message) {
-    _handleMessage(message);
-  }
+  void _onForegroundMessage(RemoteMessage message) => _handleMessage(message);
+  void _onNotificationOpenedApp(RemoteMessage message) => _handleMessage(message);
 
   void _handleMessage(RemoteMessage message) {
-    final data = message.data;
-    final type = data['type'];
-
+    final type = message.data['type'];
     if (type == 'sos') {
       showSosAlert(
-        userName: data['user_name'] ?? 'Un compañero',
-        eventId: data['event_id'] ?? '',
-        groupId: data['group_id'],
+        userName: message.data['user_name'] ?? 'Un compañero',
+        eventId: message.data['event_id'] ?? '',
+        groupId: message.data['group_id'],
       );
     }
   }
@@ -167,11 +157,9 @@ class NotificationService {
   int _sosId(String userName) => userName.hashCode.abs() % 10000;
 }
 
-// 🔥 ESTE ES CLAVE (te faltaba bien definido)
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final type = message.data['type'];
-
   if (type == 'sos') {
     await NotificationService().showSosAlert(
       userName: message.data['user_name'] ?? 'Un compañero',

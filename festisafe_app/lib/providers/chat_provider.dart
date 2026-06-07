@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:state_notifier/state_notifier.dart';
 import '../data/models/chat_message.dart';
 
 /// Mensajes de chat del grupo en memoria (no persistidos entre sesiones).
