@@ -93,23 +93,22 @@ class _MapScreenState extends ConsumerState<MapScreen> with SingleTickerProvider
     Future.delayed(const Duration(seconds: 5), _checkFallback);
   }
 
-  /// Carga el evento para obtener el punto de encuentro.
+  /// Carga el evento para obtener el punto de encuentro y centrar el mapa.
   Future<void> _loadEventData() async {
     try {
+      if (!mounted) return;
       final service = ref.read(eventServiceProvider);
-      final events = await service.getMyEvents();
-      final event = events.where((e) => e.id == widget.eventId).firstOrNull;
-      if (event != null && mounted) {
-        setState(() => _meetingPoint = event);
-        // Si no hay GPS aún, centrar el mapa en las coordenadas del evento
-        if (event.latitude != null && event.longitude != null) {
-          final myPos = ref.read(locationProvider).currentPosition;
-          if (myPos == null) {
-            _mapController.move(
-              LatLng(event.latitude!, event.longitude!),
-              15,
-            );
-          }
+      final event = await service.getEventById(widget.eventId);
+      if (!mounted) return;
+      setState(() => _meetingPoint = event);
+      // Si no hay GPS aún, centrar el mapa en las coordenadas del evento
+      if (event.latitude != null && event.longitude != null) {
+        final myPos = ref.read(locationProvider).currentPosition;
+        if (myPos == null) {
+          _mapController.move(
+            LatLng(event.latitude!, event.longitude!),
+            15,
+          );
         }
       }
     } catch (_) {}

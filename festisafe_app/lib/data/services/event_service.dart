@@ -8,7 +8,11 @@ class EventService {
 
   EventService({ApiClient? client}) : _client = client ?? ApiClient();
 
-  Future<List<EventModel>> searchEvents({String? query, bool activeOnly = true}) async {
+  /// Obtiene un evento por su ID.
+  Future<EventModel> getEventById(String eventId) async {
+    final response = await _client.dio.get('/events/$eventId');
+    return EventModel.fromJson(response.data as Map<String, dynamic>);
+  }  Future<List<EventModel>> searchEvents({String? query, bool activeOnly = true}) async {
     final response = await _client.dio.get('/events/search', queryParameters: {
       if (query != null && query.isNotEmpty) 'q': query,
       'active_only': activeOnly,
