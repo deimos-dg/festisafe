@@ -16,6 +16,7 @@ __pycache__/
 # IDE
 .idea/
 .vscode/
+festisafe_app/.idea/
 
 # Database
 *.db
@@ -24,19 +25,27 @@ __pycache__/
 # Logs
 *.log
 
-# Kiro specs (documentación local, no va al repo)
+# Testing cache
+.hypothesis/
+.pytest_cache/
+
+# Postman
+.postman/
+
+# Kiro specs
 .kiro/
 
 # Flutter build artifacts
 festisafe_app/build/
 festisafe_app/.dart_tool/
 festisafe_app/android/.gradle/
+festisafe_app/android/.kotlin/
 
-# Firebase — archivos de configuración con claves de API (NO subir al repo)
+# Firebase — archivos de configuración con claves de API
 festisafe_app/android/app/google-services.json
 festisafe_app/ios/Runner/GoogleService-Info.plist
 
-# Keystore y credenciales de firma — NUNCA subir a Git
+# Keystore y credenciales de firma
 *.keystore
 *.jks
 key.properties
@@ -46,6 +55,5 @@ google-play-service-account.json
 # Railway
 .railway/
 
-# Script de migración temporal
+# Scripts temporales
 migrate.py
-.hypothesis/
